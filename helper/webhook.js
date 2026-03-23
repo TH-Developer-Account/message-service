@@ -14,6 +14,7 @@
 import { WhatsAppAPI } from "../services/whatsapp-api.js";
 import { SAPService, normalizePONumber } from "../services/sap-service.js";
 import { isDuplicateMessage } from "./dedup.js";
+import { TEMPLATES } from "./constant.js";
 
 const api = new WhatsAppAPI();
 const sap = new SAPService();
@@ -65,6 +66,12 @@ async function routeMessage(message, name) {
     return;
   }
 
+  if (message.type === "button") {
+    const name = message.button.payload;
+    await handleButton(from, name);
+    return;
+  }
+
   if (message.type === "interactive") {
     const interactive = message.interactive;
 
@@ -96,8 +103,34 @@ async function handleText(from, name, text) {
   await api.sendHelp(from, name);
 }
 
+// ─── Button message handler ─────────────────────────────────────────────────
+async function handleButton(from, name) {
+  switch (name) {
+    case "PO Order Status":
+      await api.sendTemplate(
+        from,
+        TEMPLATES.PO_STATUS.name,
+        TEMPLATES.PO_STATUS.flowToken,
+      );
+      break;
+
+    case "Service Ticket Status":
+      await api.sendTemplate(
+        from,
+        TEMPLATES.SERVICE_TICKET.name,
+        TEMPLATES.SERVICE_TICKET.flowToken,
+      );
+      break;
+
+    default:
+      // ── Default fallback ──
+      await api.sendHelp(from, name);
+      break;
+  }
+}
+
 // ─── PO lookup & response ─────────────────────────────────────────────────
-async function handlePOLookup(from, name, rawPO) {
+async function handlePOLookup(from, rawPO) {
   const poNumber = normalizePONumber(rawPO);
 
   console.log(`🔍 PO lookup: ${poNumber} for ${from}`);
@@ -130,12 +163,30 @@ async function handlePOLookup(from, name, rawPO) {
   await api.sendText(from, message);
 }
 
+async function handleSRLookup(from, srNo) {
+  const message = "The status of the SR Ticket is completed.";
+  console.log(message);
+  await api.sendText(from, message);
+}
+
 // ─── Button reply handler ─────────────────────────────────────────────────
 async function handleButtonReply(from, name, buttonId) {
   if (buttonId?.name === "flow") {
-    const poDetails = JSON.parse(buttonId.response_json);
-    const poNumber = poDetails.po_number;
-    await handlePOLookup(from, name, poNumber);
+    const details = JSON.parse(buttonId.response_json);
+    switch (details.flow_token) {
+      case TEMPLATES.PO_STATUS.flowToken:
+        const poNumber = details.po_number;
+        await handlePOLookup(from, poNumber);
+        break;
+      case TEMPLATES.SERVICE_TICKET.flowToken:
+        const serviceTicketNumber = details.service_ticket_number;
+        await handleSRLookup(from, name, serviceTicketNumber);
+        break;
+
+      default:
+        break;
+    }
+
     return;
   }
 }

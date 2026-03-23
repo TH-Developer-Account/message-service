@@ -43,14 +43,14 @@ export class WhatsAppAPI {
     });
   }
 
-  // ─── Welcome message ──────────────────────────────────────────────────
-  async sendWelcome(to) {
+  // ─── Send Template message ──────────────────────────────────────────────────
+  async sendTemplate({ to, templateName, flowToken }) {
     return this._send({
       recipient_type: "individual",
       to,
       type: "template",
       template: {
-        name: "po_status_utility_template",
+        name: templateName,
         language: { code: "en" },
         components: [
           {
@@ -61,8 +61,7 @@ export class WhatsAppAPI {
               {
                 type: "action",
                 action: {
-                  // required for NAVIGATE flows
-                  flow_token: "po_status_utility_template_flow_token", // can be any string
+                  flow_token: flowToken,
                 },
               },
             ],
@@ -72,12 +71,24 @@ export class WhatsAppAPI {
     });
   }
 
+  async sendWelcome(to) {
+    return this._send({
+      recipient_type: "individual",
+      to,
+      type: "template",
+      template: {
+        name: "select_option_template",
+        language: { code: "en" },
+      },
+    });
+  }
+
   // ─── Help / fallback message ───────────────────────────────────────────
   async sendHelp(to, name) {
     return this.sendText(
       to,
-      `Hi ${name}! 👋 I'm your *PO Status Bot*.\n\n` +
-        `Just send me a Purchase Order number and I'll look it up immediately.\n\n` +
+      `Hi ${name}! 👋 I'm your *Status Bot*.\n\n` +
+        `Just send me a Order number and I'll look it up immediately.\n\n` +
         `*Examples:*\n` +
         `• 4500012345.`,
     );
