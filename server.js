@@ -62,10 +62,7 @@ app.post("/webhook", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 PO Tracker running on port ${PORT}`);
-  console.log(
-    `   SAP Connection: ${process.env.SAP_CONNECTION_TYPE || "mock"}`,
-  );
+  console.log(`🚀 Status Tracker running on port ${PORT}`);
 });
 
 export default app;
