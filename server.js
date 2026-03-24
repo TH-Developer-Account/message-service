@@ -50,6 +50,7 @@ app.get("/webhook", (req, res) => {
     console.log("Webhook verified");
     res.status(200).send(challenge);
   } else {
+    console.log("++++++++++++++++++++++++++++++++++++++++++++++++++++++");
     res.sendStatus(403);
   }
 });
