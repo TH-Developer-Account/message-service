@@ -28,13 +28,14 @@ app.use(
 );
 
 // ─── Health ────────────────────────────────────────────────────────────────
-app.get("/health", (_req, res) =>
+app.get("/health", (_req, res) => {
+  console.log("called=================.");
   res.json({
     status: "ok",
     sap_connection: process.env.SAP_CONNECTION_TYPE || "mock",
     timestamp: new Date().toISOString(),
-  }),
-);
+  });
+});
 
 // Verification endpoint
 app.get("/webhook", (req, res) => {
