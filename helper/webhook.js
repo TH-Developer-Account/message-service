@@ -107,19 +107,19 @@ async function handleText(from, name, text) {
 async function handleButton(from, name) {
   switch (name) {
     case "PO Order Status":
-      await api.sendTemplate(
-        from,
-        TEMPLATES.PO_STATUS.name,
-        TEMPLATES.PO_STATUS.flowToken,
-      );
+      await api.sendTemplate({
+        to: from,
+        templateName: TEMPLATES.PO_STATUS.name,
+        flowToken: TEMPLATES.PO_STATUS.flowToken,
+      });
       break;
 
     case "Service Ticket Status":
-      await api.sendTemplate(
-        from,
-        TEMPLATES.SERVICE_TICKET.name,
-        TEMPLATES.SERVICE_TICKET.flowToken,
-      );
+      await api.sendTemplate({
+        to: from,
+        templateName: TEMPLATES.SERVICE_TICKET.name,
+        flowToken: TEMPLATES.SERVICE_TICKET.flowToken,
+      });
       break;
 
     default:
