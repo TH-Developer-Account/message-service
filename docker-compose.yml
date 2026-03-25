@@ -8,14 +8,17 @@ services:
     depends_on:
       - redis
     restart: unless-stopped
+    mem_limit: 400m
 
   redis:
     image: redis:latest
+    command: redis-server --maxmemory 200mb --maxmemory-policy allkeys-lru --appendonly yes
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     restart: unless-stopped
+    mem_limit: 300m
 
 volumes:
   redis_data:
