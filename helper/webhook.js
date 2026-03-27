@@ -181,7 +181,10 @@ async function handleSRLookup(from, srNo) {
     // if (!json) return null;
 
     // return formatSAPData(json);
-  } catch (error) {}
+  } catch (error) {
+    console.log("error===========================>", error);
+    console.log("error===========================>", error.response.data);
+  }
   const message = "The status of the SR Ticket is completed.";
   console.log(message);
   await api.sendText(from, message);
