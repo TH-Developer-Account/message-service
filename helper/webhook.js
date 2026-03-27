@@ -12,12 +12,76 @@
  */
 
 import { WhatsAppAPI } from "../services/whatsapp-api.js";
+import axios from "axios";
 import { SAPService, normalizePONumber } from "../services/sap-service.js";
 import { isDuplicateMessage } from "./dedup.js";
 import { TEMPLATES } from "./constant.js";
 
 const api = new WhatsAppAPI();
 const sap = new SAPService();
+
+const formatServiceMessage = (data) => {
+  const formatDate = (iso) =>
+    new Date(iso).toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+  return `🔧 *Service Update*
+
+*Mobility Id:* ${data.mobilityId}
+*Status:* ${data.status}
+*Trip Status:* ${data.tripStatus}
+
+*Service Order ID:* ${data.mobilityId}
+*Customer Call No:* ${data.customerCallNo}
+*Follow-up Call No:* ${data.followupCallNo}
+
+*Machine Details:*
+• Model: ${data.machineModel}
+• Serial No: ${data.machineSerialNo}
+
+*Engineer:* ${data.serviceEngineerName}
+
+*Timeline:*
+• Assigned: ${formatDate(data.engineerAssignedDate)}
+• Resolved: ${formatDate(data.resolutionDate)}
+
+✅ Your service request has been successfully completed.`;
+};
+
+async function loginAndGetToken() {
+  try {
+    const url =
+      "https://s4wpxl9869.execute-api.ap-south-1.amazonaws.com/Prod/api/User/Login";
+
+    const { data } = await axios.post(url, {
+      username: process.env.MOBILITY_USERNAME,
+      password: process.env.MOBILITY_PASSWORD,
+    });
+
+    // adjust based on actual response shape
+    return data?.idToken;
+  } catch (error) {
+    console.log("error==================>", error.response);
+  }
+}
+
+async function fetchServiceDetails(srNo, token) {
+  const url = `https://s4wpxl9869.execute-api.ap-south-1.amazonaws.com/Prod/api/Service/GetServiceDetailsByServiceOrderId/${encodeURIComponent(srNo)}`;
+
+  const { data } = await axios.get(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return data;
+}
 
 // ─── Main webhook dispatcher ──────────────────────────────────────────────
 export async function handleWebhook(body) {
@@ -164,30 +228,43 @@ async function handlePOLookup(from, rawPO) {
 }
 
 async function handleSRLookup(from, srNo) {
+  let mobilityToken = process.env.MOBILITY_ACCESS_TOKEN;
   try {
-    const url = `https://s4wpxl9869.execute-api.ap-south-1.amazonaws.com/Prod/api/Service/GetServiceDetailsByServiceOrderId/${srNo}`;
-
-    const response = await axios.get(url, {
-      headers: {
-        Authorization: `Bearer ${process.env.MOBILITY_ACCESS_TOKEN}`,
-        Accept: "application/json",
-      },
-    });
-
-    console.log(`respone===============>`, response);
-
-    // const json = response.data.d.results;
-
-    // if (!json) return null;
-
-    // return formatSAPData(json);
+    // 1st attempt
+    let data = await fetchServiceDetails(srNo, "123");
+    const message = formatServiceMessage(data);
+    await api.sendText(from, message);
   } catch (error) {
-    console.log("error===========================>", error);
-    console.log("error===========================>", error.response.data);
+    const status = error.response?.status;
+
+    // Only retry on auth failure
+    if (status === 401 || status === 403) {
+      try {
+        // refresh token
+        mobilityToken = await loginAndGetToken();
+
+        // retry request
+        const data = await fetchServiceDetails(srNo, mobilityToken);
+        const message = formatServiceMessage(data);
+        await api.sendText(from, message);
+      } catch (retryError) {
+        console.error(
+          "Retry failed:",
+          retryError.response?.data || retryError.message,
+        );
+        await api.sendText(
+          from,
+          "❌ Unable to fetch service details. Please try again later.",
+        );
+      }
+    } else {
+      console.error("Error:", error.response?.data || error.message);
+      await api.sendText(
+        from,
+        "❌ Something went wrong. Please try again later.",
+      );
+    }
   }
-  const message = "The status of the SR Ticket is completed.";
-  console.log(message);
-  await api.sendText(from, message);
 }
 
 // ─── Button reply handler ─────────────────────────────────────────────────
@@ -200,8 +277,8 @@ async function handleButtonReply(from, name, buttonId) {
         await handlePOLookup(from, poNumber);
         break;
       case TEMPLATES.SERVICE_TICKET.flowToken:
-        const serviceTicketNumber = details.service_ticket_number;
-        await handleSRLookup(from, name, serviceTicketNumber);
+        const serviceTicketNumber = details.po_number;
+        await handleSRLookup(from, serviceTicketNumber);
         break;
 
       default:
