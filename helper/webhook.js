@@ -231,7 +231,7 @@ async function handleSRLookup(from, srNo) {
   let mobilityToken = process.env.MOBILITY_ACCESS_TOKEN;
   try {
     // 1st attempt
-    let data = await fetchServiceDetails(srNo, "123");
+    let data = await fetchServiceDetails(srNo, mobilityToken);
     const message = formatServiceMessage(data);
     await api.sendText(from, message);
   } catch (error) {
