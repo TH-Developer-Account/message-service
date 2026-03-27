@@ -164,6 +164,24 @@ async function handlePOLookup(from, rawPO) {
 }
 
 async function handleSRLookup(from, srNo) {
+  try {
+    const url = `https://s4wpxl9869.execute-api.ap-south-1.amazonaws.com/Prod/api/Service/GetServiceDetailsByServiceOrderId/${serviceOrderId}`;
+
+    const response = await axios.get(url, {
+      headers: {
+        Authorization: `Bearer ${process.env.MOBILITY_ACCESS_TOKEN}`,
+        Accept: "application/json",
+      },
+    });
+
+    console.log(`respone===============>`, response);
+
+    // const json = response.data.d.results;
+
+    // if (!json) return null;
+
+    // return formatSAPData(json);
+  } catch (error) {}
   const message = "The status of the SR Ticket is completed.";
   console.log(message);
   await api.sendText(from, message);
