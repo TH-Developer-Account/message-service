@@ -165,7 +165,7 @@ async function handlePOLookup(from, rawPO) {
 
 async function handleSRLookup(from, srNo) {
   try {
-    const url = `https://s4wpxl9869.execute-api.ap-south-1.amazonaws.com/Prod/api/Service/GetServiceDetailsByServiceOrderId/${serviceOrderId}`;
+    const url = `https://s4wpxl9869.execute-api.ap-south-1.amazonaws.com/Prod/api/Service/GetServiceDetailsByServiceOrderId/${srNo}`;
 
     const response = await axios.get(url, {
       headers: {
