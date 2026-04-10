@@ -55,14 +55,14 @@ export class SAPService {
    * @param {string} poNumber - e.g. "4500012345"
    * @returns {PODetails|null}
    */
-  async getPOStatus(poNumber) {
+  async getPOStatus(poNumber, isSalesOrder) {
     const normalized = normalizePONumber(poNumber);
 
     console.log(`🔍 Fetching PO ${normalized} via [${this.connectionType}]`);
 
     switch (this.connectionType) {
       case "odata":
-        return this._fetchViaOData(normalized);
+        return this._fetchViaOData(normalized, isSalesOrder);
       case "rfc":
         return this._fetchViaRFC(normalized);
       case "mock":
@@ -72,8 +72,11 @@ export class SAPService {
   }
 
   // ─── 1. OData (S/4HANA / Fiori / BTP) ──────────────────────────────────
-  async _fetchViaOData(poNumber) {
-    const url = `http://th-s4-qas-ad.tatahitachi.co.in:8001/sap/opu/odata/sap/ZSO_ODATA_SRV/SOSet?$filter=CustRef%20eq%20%27${poNumber}%27`;
+  async _fetchViaOData(poNumber, isSalesOrder) {
+    // const url = `http://th-s4-qas-ad.tatahitachi.co.in:8001/sap/opu/odata/sap/ZSO_ODATA_SRV/SOSet?$filter=CustRef%20eq%20%27${poNumber}%27`;
+
+    const url = `http://th-s4-qas-ad.tatahitachi.co.in:8001/sap/opu/odata/sap/ZSO_ODATA_SRV/SOSet?$filter=${isSalesOrder ? "SalesDoc" : "CustRef"}%20eq%20%27${poNumber}%27`;
+
     const username = process.env.SAP_USERNAME;
     const password = process.env.SAP_PASSWORD;
 

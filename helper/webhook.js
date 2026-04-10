@@ -194,14 +194,14 @@ async function handleButton(from, name) {
 }
 
 // ─── PO lookup & response ─────────────────────────────────────────────────
-async function handlePOLookup(from, rawPO) {
+async function handlePOLookup(from, rawPO, isSalesOrder) {
   const poNumber = normalizePONumber(rawPO);
 
   console.log(`🔍 PO lookup: ${poNumber} for ${from}`);
 
   let po;
   try {
-    po = await sap.getPOStatus(poNumber);
+    po = await sap.getPOStatus(poNumber, isSalesOrder);
   } catch (err) {
     if (err.code === "ENOTFOUND") {
       await api.sendText(
@@ -273,11 +273,13 @@ async function handleButtonReply(from, name, buttonId) {
     const details = JSON.parse(buttonId.response_json);
     switch (details.flow_token) {
       case TEMPLATES.PO_STATUS.flowToken:
-        const poNumber = details.po_number;
-        await handlePOLookup(from, poNumber);
+        const poNumber = details.po_number || details.sales_doc_number;
+        let isSalesOrder = false;
+        if (details.sales_doc_number) isSalesOrder = true;
+        await handlePOLookup(from, poNumber, isSalesOrder);
         break;
       case TEMPLATES.SERVICE_TICKET.flowToken:
-        const serviceTicketNumber = details.po_number;
+        const serviceTicketNumber = details.service_ticket_number;
         await handleSRLookup(from, serviceTicketNumber);
         break;
 
