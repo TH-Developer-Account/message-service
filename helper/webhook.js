@@ -219,13 +219,9 @@ async function handlePOLookup(from, rawPO, isSalesOrder) {
     );
     return;
   }
-  if (po) {
-    const message = [
-      "These are the Sale document Numbers:",
-      ...po.map((doc) => `• ${doc}`),
-    ].join("\n");
 
-    await api.sendText(from, message);
+  if (po) {
+    await api.sendText(from, po);
   } else {
     await api.sendText(
       from,

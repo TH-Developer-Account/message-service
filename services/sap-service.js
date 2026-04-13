@@ -73,36 +73,30 @@ export class SAPService {
 
   // ─── 1. OData (S/4HANA / Fiori / BTP) ──────────────────────────────────
   async _fetchViaOData(poNumber, isSalesOrder) {
-    try {
-      // const url = `http://th-s4-qas-ad.tatahitachi.co.in:8001/sap/opu/odata/sap/ZSO_ODATA_SRV/SOSet?$filter=CustRef%20eq%20%27${poNumber}%27`;
+    // const url = `http://th-s4-qas-ad.tatahitachi.co.in:8001/sap/opu/odata/sap/ZSO_ODATA_SRV/SOSet?$filter=CustRef%20eq%20%27${poNumber}%27`;
 
-      const url = `http://th-s4-qas-ad.tatahitachi.co.in:8001/sap/opu/odata/sap/ZSO_ODATA_SRV/SOSet?$filter=${isSalesOrder ? "SalesDoc" : "CustRef"}%20eq%20%27${poNumber}%27`;
+    const url = `http://th-s4-qas-ad.tatahitachi.co.in:8001/sap/opu/odata/sap/ZSO_ODATA_SRV/SOSet?$filter=${isSalesOrder ? "SalesDoc" : "CustRef"}%20eq%20%27${poNumber}%27`;
 
-      console.log({ url });
+    console.log({ url });
 
-      const username = process.env.SAP_USERNAME;
-      const password = process.env.SAP_PASSWORD;
+    const username = process.env.SAP_USERNAME;
+    const password = process.env.SAP_PASSWORD;
 
-      const response = await axios.get(url, {
-        auth: {
-          username,
-          password,
-        },
-        headers: {
-          Accept: "application/json",
-        },
-      });
+    const response = await axios.get(url, {
+      auth: {
+        username,
+        password,
+      },
+      headers: {
+        Accept: "application/json",
+      },
+    });
 
-      const json = response.data.d.results;
+    const json = response.data.d.results;
 
-      console.log({ response: response.data });
+    if (!json) return null;
 
-      if (!json) return null;
-
-      return formatSAPData(json);
-    } catch (error) {
-      console.log("error============>", error);
-    }
+    return formatSAPData(json);
   }
   // ─── 2. RFC / BAPI (via node-rfc) ──────────────────────────────────────
   async _fetchViaRFC(poNumber) {
@@ -343,11 +337,32 @@ function formatSAPDate(sapDate) {
   return sapDate;
 }
 
-function formatSAPData(sapData) {
-  if (!sapData) return "N/A";
+function formatSAPData(dataArray) {
+  if (!dataArray?.length) return "N/A";
 
-  const salesDocs = sapData.map((item) => item?.SalesDoc).filter(Boolean);
+  const check = (val) => val && val.trim() !== "";
+  const statusIcon = (val) => (check(val) ? "✅" : "⏳");
 
-  console.log({ salesDocs });
-  return salesDocs;
+  const messages = dataArray
+    .map((data, index) => {
+      const lines = [
+        `*Status Update for - ${data.SalesDoc}/${data.Material}*`,
+        `━━━━━━━━━━━━━━━━━━━━`,
+        ``,
+        `📋 *Document Status*`,
+        `  ${statusIcon(data.SalesDoc)} Sales Order  ${statusIcon(data.BillingDoc)} Billing   ${statusIcon(data.DeliveryDoc)} Delivery`,
+        ``,
+        `🚦 *Dispatch Status*`,
+        `  🔖 LR Number     : ${data.LRNO || "N/A"}`,
+        `  🚚 Truck No      : ${check(data.TruckNo) ? "🛻 " + data.TruckNo : "⏳ Not Assigned"}`,
+        `  🏢 Transporter   : ${check(data.TrName) ? data.TrName : "N/A"}`,
+        ``,
+        `━━━━━━━━━━━━━━━━━━━━`,
+      ];
+
+      return lines.join("\n");
+    })
+    .join("\n\n");
+
+  return messages;
 }
