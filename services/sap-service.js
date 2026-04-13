@@ -101,7 +101,7 @@ export class SAPService {
 
       return formatSAPData(json);
     } catch (error) {
-      console.log("error============>", error.message);
+      console.log("error============>", error);
     }
   }
   // ─── 2. RFC / BAPI (via node-rfc) ──────────────────────────────────────
