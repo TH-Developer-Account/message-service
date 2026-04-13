@@ -203,6 +203,7 @@ async function handlePOLookup(from, rawPO, isSalesOrder) {
   try {
     po = await sap.getPOStatus(poNumber, isSalesOrder);
   } catch (err) {
+    console.log("error from SAP=====>", err);
     if (err.code === "ENOTFOUND") {
       await api.sendText(
         from,
@@ -218,13 +219,19 @@ async function handlePOLookup(from, rawPO, isSalesOrder) {
     );
     return;
   }
+  if (po) {
+    const message = [
+      "These are the Sale document Numbers:",
+      ...po.map((doc) => `• ${doc}`),
+    ].join("\n");
 
-  const message = [
-    "These are the Sale document Numbers:",
-    ...po.map((doc) => `• ${doc}`),
-  ].join("\n");
-
-  await api.sendText(from, message);
+    await api.sendText(from, message);
+  } else {
+    await api.sendText(
+      from,
+      `Not able to fetch the status, Please try again later!`,
+    );
+  }
 }
 
 async function handleSRLookup(from, srNo) {
