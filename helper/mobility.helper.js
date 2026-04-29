@@ -18,6 +18,7 @@ export const loginAndGetToken = async () => {
       code: error.code,
       response: error.response,
     });
+    throw new Error("Error while logging into sales mobility", error.message);
   }
 };
 
