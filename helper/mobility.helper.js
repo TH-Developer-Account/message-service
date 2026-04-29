@@ -1,4 +1,4 @@
-import axios from "axios";
+import { messageAxios } from "./http-client.js";
 import logger from "./utils/logger";
 
 export const loginAndGetToken = async () => {
@@ -6,7 +6,7 @@ export const loginAndGetToken = async () => {
     const url =
       "https://s4wpxl9869.execute-api.ap-south-1.amazonaws.com/Prod/api/User/Login";
 
-    const { data } = await axios.post(url, {
+    const { data } = await messageAxios.post(url, {
       username: process.env.MOBILITY_USERNAME,
       password: process.env.MOBILITY_PASSWORD,
     });
@@ -25,7 +25,7 @@ export const loginAndGetToken = async () => {
 export const fetchServiceDetails = async (srNo, token) => {
   const url = `https://s4wpxl9869.execute-api.ap-south-1.amazonaws.com/Prod/api/Service/GetServiceDetailsByServiceOrderId/${encodeURIComponent(srNo)}`;
 
-  const { data } = await axios.get(url, {
+  const { data } = await messageAxios.get(url, {
     headers: {
       Authorization: `Bearer ${token}`,
     },

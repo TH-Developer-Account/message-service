@@ -13,7 +13,7 @@
  *  - OData: /sap/opu/odata/sap/MM_PUR_PO_MAINT_V2_SRV
  */
 
-import axios from "axios";
+import { messageAxios } from "../helper/utils/http-client";
 import logger from "../helper/utils/logger";
 
 // ─── Main SAP Service class ───────────────────────────────────────────────
@@ -49,7 +49,7 @@ export class SAPService {
     const username = process.env.SAP_USERNAME;
     const password = process.env.SAP_PASSWORD;
 
-    const response = await axios.get(url, {
+    const response = await messageAxios.get(url, {
       auth: {
         username,
         password,
