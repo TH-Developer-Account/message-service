@@ -1,5 +1,5 @@
-import { messageAxios } from "./http-client.js";
-import logger from "./utils/logger";
+import { messageAxios } from "./utils/http-client.js";
+import logger from "./utils/logger.js";
 
 export const loginAndGetToken = async () => {
   try {

@@ -40,9 +40,10 @@ flowRouter.post("/", async (req, res) => {
 
   try {
     const payload = decryptRequest(req.body);
-    logger.debug("Flow payload received", { action, screen });
 
     const { action, screen, data } = payload;
+    logger.debug("Flow payload received", { action, screen });
+
     ({ decryptedAesKey, iv } = extractAesKeyAndIV(req.body));
 
     // Meta sends a ping to confirm the endpoint is reachable

@@ -9,15 +9,25 @@
  *
  * Nothing else. Business logic lives in routes/ and helper/.
  */
+
 import "dotenv/config";
 import express from "express";
 import logger from "./helper/utils/logger.js";
 import { httpLogger } from "./middleware/http-logger.js";
+import { startWebhookWorker } from "./queue-service/webhook.worker.js";
 import { webhookRouter } from "./routes/webhook.route.js";
 import { flowRouter } from "./routes/flow.route.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+process.on("uncaughtException", (err) => {
+  logger.error("Uncaught exception", { err: err.message, stack: err.stack });
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  logger.error("Unhandled rejection", { reason, promise });
+});
 
 // ─── Raw body capture (required for Meta HMAC signature verification) ─────
 app.use(
@@ -60,7 +70,9 @@ app.use((err, req, res, next) => {
   }
 });
 
-// ─── Start ────────────────────────────────────────────────────────────────
+// ─── Start worker + server ────────────────────────────────────────────────
+startWebhookWorker(); // BullMQ worker — consumes the webhook queue
+
 app.listen(PORT, () => {
   logger.info("Server started", {
     port: PORT,

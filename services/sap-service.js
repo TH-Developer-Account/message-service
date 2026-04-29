@@ -13,8 +13,8 @@
  *  - OData: /sap/opu/odata/sap/MM_PUR_PO_MAINT_V2_SRV
  */
 
-import { messageAxios } from "../helper/utils/http-client";
-import logger from "../helper/utils/logger";
+import { messageAxios } from "../helper/utils/http-client.js";
+import logger from "../helper/utils/logger.js";
 
 // ─── Main SAP Service class ───────────────────────────────────────────────
 export class SAPService {

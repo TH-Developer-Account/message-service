@@ -7,7 +7,7 @@
  */
 import { Router } from "express";
 import { verifyMetaSignature } from "../middleware/verify-meta-signature.js";
-import { handleWebhook } from "../helper/webhook.js";
+import { webhookQueue } from "../queue-service/webhook.queue.js";
 import logger from "../helper/utils/logger.js";
 
 export const webhookRouter = Router();
@@ -32,14 +32,46 @@ webhookRouter.get("/", (req, res) => {
 // and process the payload asynchronously so any slow SAP/Mobility call
 // never causes a timeout on Meta's side.
 webhookRouter.post("/", verifyMetaSignature, async (req, res) => {
-  res.sendStatus(200); // Ack Meta immediately — headers now sent
+  // Acknowledge Meta immediately — before any processing
+  res.sendStatus(200);
+
   try {
-    await handleWebhook(req.body);
+    const body = req.body;
+
+    // Check if this payload actually contains any messages
+    // Payloads with only delivery statuses (sent/delivered/read)
+    // have no messages array — no point queuing them
+    const hasMessages = body?.entry?.some((entry) =>
+      entry.changes?.some((change) => {
+        const messages = change.value?.messages;
+        return messages && messages.length > 0;
+      }),
+    );
+
+    if (!hasMessages) {
+      logger.debug("Webhook payload has no messages — skipping queue");
+      return;
+    }
+
+    const job = await webhookQueue.add("incoming", body);
+    logger.debug("Webhook payload enqueued", { jobId: job.id });
   } catch (err) {
-    // Cannot change the response status at this point; log only.
-    logger.error("Webhook processing error", {
+    // Queue is down — log it. Meta will retry the webhook automatically
+    // because we already sent 200... except we didn't want that.
+    // See note below on why we still send 200 here.
+    logger.error("Failed to enqueue webhook payload", {
       err: err.message,
-      stack: err.stack,
+      body: req.body,
     });
+    /**
+     * NOTE: We send 200 even when enqueuing fails because:
+     *  - If we send a non-200, Meta retries — but our queue is down,
+     *    so the retry will also fail to enqueue.
+     *  - The raw body is logged above so you can replay it manually.
+     *  - Once Redis recovers, normal flow resumes for new messages.
+     * If you want Meta to retry instead, change this to res.sendStatus(500)
+     * BEFORE the res.sendStatus(200) above — but be aware Meta's retry
+     * schedule is not guaranteed and could cause duplicates.
+     */
   }
 });
