@@ -56,7 +56,7 @@ async function _loginAndCache(redis) {
     throw new Error("Login succeeded but returned no token");
   }
 
-  await redis.set(REDIS_KEY, token, { NX: true, EX: TOKEN_TTL_SECONDS });
+  await redis.set(REDIS_KEY, token, "NX", "EX", TOKEN_TTL_SECONDS);
   logger.info("Mobility token cached", { ttl: TOKEN_TTL_SECONDS });
   return token;
 }
