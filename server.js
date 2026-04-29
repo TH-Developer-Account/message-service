@@ -1,24 +1,25 @@
 /**
- * server.js — WhatsApp PO Tracker Server
+ * server.js — app entry point
  *
- * Endpoints:
- *  GET  /webhook               → Meta webhook verification
- *  POST /webhook               → Incoming messages (signature verified)
- *  POST /api/notify-po-update  → Trigger proactive PO status notification
- *  GET  /api/po/:poNumber      → Manual PO lookup (for testing)
- *  GET  /health                → Health check
+ * Responsibilities:
+ *  - Create the Express app
+ *  - Register middleware
+ *  - Mount route modules
+ *  - Start the HTTP server
+ *
+ * Nothing else. Business logic lives in routes/ and helper/.
  */
-
+import "dotenv/config";
 import express from "express";
-import dotenv from "dotenv";
-import { handleWebhook } from "./helper/webhook.js";
-
-dotenv.config();
+import logger from "./helper/utils/logger.js";
+import { httpLogger } from "./middleware/http-logger.js";
+import { webhookRouter } from "./routes/webhook.route.js";
+import { flowRouter } from "./routes/flow.route.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ─── Raw body for signature verification ─────────────────────────────────
+// ─── Raw body capture (required for Meta HMAC signature verification) ─────
 app.use(
   express.json({
     verify: (req, _res, buf) => {
@@ -27,9 +28,15 @@ app.use(
   }),
 );
 
-// ─── Health ────────────────────────────────────────────────────────────────
+// ─── HTTP access log ──────────────────────────────────────────────────────
+app.use(httpLogger);
+
+// ─── Routes ───────────────────────────────────────────────────────────────
+app.use("/webhook", webhookRouter);
+app.use("/fetch-machine-serials", flowRouter);
+
+// ─── Health ───────────────────────────────────────────────────────────────
 app.get("/health", (_req, res) => {
-  console.log("called=================.");
   res.json({
     status: "ok",
     sap_connection: process.env.SAP_CONNECTION_TYPE || "mock",
@@ -37,38 +44,29 @@ app.get("/health", (_req, res) => {
   });
 });
 
-// Verification endpoint
-app.get("/webhook", (req, res) => {
-  const mode = req.query["hub.mode"];
-  const token = req.query["hub.verify_token"];
-  const challenge = req.query["hub.challenge"];
-
-  console.log("mode==============>", mode);
-  console.log("token==============>", token);
-  console.log("challenge==============>", challenge);
-
-  if (mode === "subscribe" && token === process.env.WEBHOOK_VERIFY_TOKEN) {
-    console.log("Webhook verified");
-    res.status(200).send(challenge);
-  } else {
-    console.log("++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-    res.sendStatus(403);
+// ─── Unhandled Express errors ─────────────────────────────────────────────
+// Catches any error passed via next(err) inside route handlers.
+// eslint-disable-next-line unused-imports/no-unused-vars
+app.use((err, req, res, next) => {
+  // eslint-disable-line no-unused-vars
+  logger.error("Unhandled Express error", {
+    err: err.message,
+    stack: err.stack,
+    method: req.method,
+    path: req.path,
+  });
+  if (!res.headersSent) {
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
-// Usage in your route handler:
-app.post("/webhook", async (req, res) => {
-  try {
-    res.sendStatus(200);
-    await handleWebhook(req.body);
-  } catch (err) {
-    console.error("Decryption failed:", err);
-    res.status(400).json({ error: "Decryption failed" });
-  }
-});
-
+// ─── Start ────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`🚀 Status Tracker running on port ${PORT}`);
+  logger.info("Server started", {
+    port: PORT,
+    env: process.env.NODE_ENV || "development",
+    sap_connection: process.env.SAP_CONNECTION_TYPE || "mock",
+  });
 });
 
 export default app;

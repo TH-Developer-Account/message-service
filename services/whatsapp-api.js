@@ -45,8 +45,6 @@ export class WhatsAppAPI {
 
   // ─── Send Template message ──────────────────────────────────────────────────
   async sendTemplate({ to, templateName, flowToken }) {
-    console.log("temaplate name====================>", templateName);
-    console.log("flowToken====================>", flowToken);
     return this._send({
       recipient_type: "individual",
       to,
