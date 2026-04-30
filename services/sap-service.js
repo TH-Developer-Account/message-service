@@ -99,7 +99,7 @@ function formatSAPData(dataArray) {
         `━━━━━━━━━━━━━━━━━━━━`,
         ``,
         `📋 *Document Status*`,
-        `  ${statusIcon(data.SalesDoc)}Sales Order ${statusIcon(data.BillingDoc)}Billing ${statusIcon(data.DeliveryDoc)}Delivery`,
+        `  ${statusIcon(data.SalesDoc)}Sales Order ${statusIcon(data.DeliveryDoc)}Delivery ${statusIcon(data.BillingDoc)}Billing`,
         ``,
         `🚦 *Dispatch Status*`,
         `  🔖 LR Number     : ${data.LRNO || "N/A"}`,
