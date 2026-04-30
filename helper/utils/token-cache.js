@@ -6,7 +6,7 @@
  * Strategy:
  *  - On getToken()  → return cached token if present, else login and cache it
  *  - On forceRefresh() → delete the cached key, login, and re-cache
- *  - TTL is set to TOKEN_TTL_SECONDS (default 300s = 5 min) so the cache
+ *  - TTL is set to TOKEN_TTL_SECONDS (default 1200s = 20 min) so the cache
  *    always expires ~1 min before the real token does, avoiding edge-case 401s
  *
  * The redis client is created once and reused across the process lifetime.
@@ -17,7 +17,7 @@ import logger from "./logger.js";
 
 // ─── Config ───────────────────────────────────────────────────────────────
 const REDIS_KEY = "mobility:access_token";
-const TOKEN_TTL_SECONDS = parseInt("300", 10); // 5 min default
+const TOKEN_TTL_SECONDS = parseInt("1200", 10); // 20 min default
 
 // ─── Public API ───────────────────────────────────────────────────────────
 

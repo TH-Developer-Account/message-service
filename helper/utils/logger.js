@@ -79,7 +79,7 @@ transports.push(
     dirname: LOG_DIR,
     filename: "combined-%DATE%.log",
     datePattern: "YYYY-MM-DD",
-    maxFiles: "14d", // keep 14 days
+    maxFiles: "7d", // keep 14 days
     maxSize: "20m", // rotate at 20 MB regardless of date
     level: "info",
     format: fileFormat,
@@ -93,7 +93,7 @@ transports.push(
     dirname: LOG_DIR,
     filename: "error-%DATE%.log",
     datePattern: "YYYY-MM-DD",
-    maxFiles: "30d", // keep errors longer for post-incident review
+    maxFiles: "14d", // keep errors longer for post-incident review
     maxSize: "20m",
     level: "error",
     format: fileFormat,
@@ -112,7 +112,8 @@ const logger = winston.createLogger({
       dirname: LOG_DIR,
       filename: "exceptions-%DATE%.log",
       datePattern: "YYYY-MM-DD",
-      maxFiles: "30d",
+      maxFiles: "14d",
+      maxSize: "20m",
       format: fileFormat,
       zippedArchive: true,
     }),
@@ -122,7 +123,8 @@ const logger = winston.createLogger({
       dirname: LOG_DIR,
       filename: "rejections-%DATE%.log",
       datePattern: "YYYY-MM-DD",
-      maxFiles: "30d",
+      maxFiles: "14d",
+      maxSize: "20m",
       format: fileFormat,
       zippedArchive: true,
     }),
