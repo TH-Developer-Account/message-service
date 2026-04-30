@@ -1,11 +1,21 @@
-// Mock DB function — replace with your real DB call
+import { fetchMachineDetails } from "./handlers/edost-create-service-ticket.handler.js";
+import { withMachineTokenRetry } from "./utils/edost-token-entry.js";
+import logger from "./utils/logger.js";
+
 export const getMachinesFromDB = async (phoneNumber) => {
-  const mockDB = {
-    "+918792426168": [
-      { serialNumber: "SN-001", machineName: "Drilling Machine" },
-      { serialNumber: "SN-002", machineName: "Lathe Machine" },
-    ],
-    "+911234567890": [{ serialNumber: "SN-003", machineName: "CNC Cutter" }],
-  };
-  return mockDB[phoneNumber] || null;
+  logger.info("Machine serial lookup started", { phoneNumber });
+
+  const machines = await withMachineTokenRetry((token) =>
+    fetchMachineDetails(phoneNumber, token),
+  );
+
+  if (!machines || machines.length === 0) {
+    logger.info("No machines found", { phoneNumber });
+    return null;
+  }
+
+  return machines.map((machine) => ({
+    serialNumber: machine.equipementSerialNumber,
+    machineName: machine.machineName,
+  }));
 };

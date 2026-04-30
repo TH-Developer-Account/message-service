@@ -7,7 +7,7 @@
  */
 import { fetchServiceDetails } from "../mobility.helper.js";
 import { formatServiceMessage } from "../constant.js";
-import { withTokenRetry } from "../utils/token-retry.js";
+import { withTokenRetry } from "../utils/mobility-token-retry.js";
 import { WhatsAppAPI } from "../../services/whatsapp-api.js";
 import logger from "../utils/logger.js";
 

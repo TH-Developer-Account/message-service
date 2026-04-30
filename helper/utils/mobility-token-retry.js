@@ -12,7 +12,7 @@
  * Usage:
  *   const data = await withTokenRetry((token) => fetchSomething(id, token));
  */
-import { getToken, forceRefreshToken } from "./token-cache.js";
+import { getToken, forceRefreshToken } from "./mobility-token-cache.js";
 import logger from "./logger.js";
 
 export async function withTokenRetry(fn) {

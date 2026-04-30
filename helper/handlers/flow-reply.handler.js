@@ -8,6 +8,7 @@
 import { TEMPLATES } from "../constant.js";
 import { handlePOLookup } from "./po.handler.js";
 import { handleSRLookup } from "./sr.handler.js";
+import { handleCreateTicket } from "./edost-create-service-ticket.handler.js";
 import { WhatsAppAPI } from "../../services/whatsapp-api.js";
 import logger from "../utils/logger.js";
 
@@ -45,6 +46,7 @@ export async function handleButtonReply(from, buttonId) {
 
     case TEMPLATES.CREATE_TICKET.flowToken: {
       logger.info("Create-ticket flow submitted", { details });
+      await handleCreateTicket(from, details);
       // TODO: implement create-ticket handler
       break;
     }
