@@ -15,14 +15,6 @@ export const getPrivateKey = () => {
     throw new Error("PRIVATE_KEY is not set in environment variables");
   }
 
-  logger.info("Private key raw value check", {
-    length: privateKey.length,
-    startsCorrectly: privateKey.startsWith("-----BEGIN"),
-    endsCorrectly: privateKey.endsWith("-----"),
-    hasRealNewlines: privateKey.includes("\n"),
-    hasEscapedNewlines: privateKey.includes("\\n"),
-  });
-
   try {
     _cachedKey = crypto.createPrivateKey({ key: privateKey, format: "pem" });
     logger.info("Private key created successfully");
@@ -34,12 +26,6 @@ export const getPrivateKey = () => {
 };
 
 export const decryptRequest = (body) => {
-  logger.info("decryptRequest called", {
-    hasEncryptedAesKey: !!body.encrypted_aes_key,
-    hasEncryptedFlowData: !!body.encrypted_flow_data,
-    hasInitialVector: !!body.initial_vector,
-  });
-
   try {
     const { encrypted_aes_key, encrypted_flow_data, initial_vector } = body;
 
@@ -58,19 +44,11 @@ export const decryptRequest = (body) => {
     // Step 2 — Prepare IV and encrypted data
     const iv = Buffer.from(initial_vector, "base64");
     const encryptedFlowDataBuffer = Buffer.from(encrypted_flow_data, "base64");
-    logger.info("Buffers prepared", {
-      ivLength: iv.length,
-      encryptedFlowDataLength: encryptedFlowDataBuffer.length,
-    });
 
     // Step 3 — Separate auth tag
     const TAG_LENGTH = 16;
     const encryptedData = encryptedFlowDataBuffer.subarray(0, -TAG_LENGTH);
     const authTag = encryptedFlowDataBuffer.subarray(-TAG_LENGTH);
-    logger.info("Auth tag separated", {
-      encryptedDataLength: encryptedData.length,
-      authTagLength: authTag.length,
-    });
 
     // Step 4 — Decrypt flow data
     logger.info("Decrypting flow data...");
@@ -85,9 +63,6 @@ export const decryptRequest = (body) => {
       decipher.update(encryptedData),
       decipher.final(),
     ]);
-    logger.info("Flow data decrypted", {
-      decryptedLength: decryptedData.length,
-    });
 
     const parsed = JSON.parse(decryptedData.toString("utf-8"));
     logger.info("Decryption complete", { parsedKeys: Object.keys(parsed) });
@@ -109,7 +84,6 @@ export const encryptResponse = (response, aesKey, iv) => {
     for (let i = 0; i < iv.length; i++) {
       flippedIv[i] = ~iv[i];
     }
-    logger.info("IV flipped", { ivLength: flippedIv.length });
 
     const cipher = crypto.createCipheriv("aes-128-gcm", aesKey, flippedIv);
     const encryptedData = Buffer.concat([
@@ -117,9 +91,6 @@ export const encryptResponse = (response, aesKey, iv) => {
       cipher.final(),
       cipher.getAuthTag(),
     ]);
-    logger.info("Response encrypted", {
-      encryptedLength: encryptedData.length,
-    });
 
     return encryptedData.toString("base64");
   } catch (err) {
