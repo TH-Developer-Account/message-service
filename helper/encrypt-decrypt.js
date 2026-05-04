@@ -1,16 +1,19 @@
 import crypto from "node:crypto";
 
+// Parsed once at first use — the PEM string doesn't change at runtime
+let _cachedKey = null;
+
 export const getPrivateKey = () => {
+  if (_cachedKey) return _cachedKey;
+
   const privateKey = process.env.WHATSAPP_FLOW_PRIVATE_KEY;
 
   if (!privateKey) {
     throw new Error("PRIVATE_KEY is not set in environment variables");
   }
 
-  return crypto.createPrivateKey({
-    key: privateKey,
-    format: "pem",
-  });
+  _cachedKey = crypto.createPrivateKey({ key: privateKey, format: "pem" });
+  return _cachedKey;
 };
 
 export const decryptRequest = (body) => {
@@ -19,7 +22,7 @@ export const decryptRequest = (body) => {
   // Decrypt the AES key using RSA private key
   const decryptedAesKey = crypto.privateDecrypt(
     {
-      key: getPrivateKey(), // ✅ KeyObject instead of raw string
+      key: getPrivateKey(),
       padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
       oaepHash: "sha256",
     },
