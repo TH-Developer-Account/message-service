@@ -30,8 +30,8 @@ module.exports = {
       // ── Environment ─────────────────────────────────────────────────────
       env_file: ".env",
       env: {
-        // NODE_ENV: "production",
-        NODE_ENV: "development",
+        NODE_ENV: "production",
+        // NODE_ENV: "development",
       },
 
       // ── Memory guard ────────────────────────────────────────────────────
