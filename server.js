@@ -93,6 +93,17 @@ const flowLimiter = rateLimit({
   message: "Too many requests",
 });
 
+// ─── Request logger (temporary debug) ────────────────────────────────────
+app.use((req, res, next) => {
+  logger.info("Incoming request", {
+    method: req.method,
+    path: req.path,
+    ip: req.ip,
+    contentType: req.headers["content-type"],
+  });
+  next();
+});
+
 // ─── Routes ───────────────────────────────────────────────────────────────
 app.use("/webhook", webhookLimiter, webhookRouter);
 app.use("/fetch-machine-serials", flowLimiter, flowRouter);
