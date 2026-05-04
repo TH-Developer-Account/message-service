@@ -5,10 +5,8 @@
  *  - Greeting keywords → send welcome / main menu
  *  - Anything else     → send help with instructions
  */
-import { WhatsAppAPI } from "../../services/whatsapp-api.js";
+import { whatsappApi as api } from "../../services/whatsapp-api.js";
 import logger from "../utils/logger.js";
-
-const api = new WhatsAppAPI();
 
 const GREETING_REGEX = /^(hi|hello|hey|start|help|menu|track|status|check)$/i;
 

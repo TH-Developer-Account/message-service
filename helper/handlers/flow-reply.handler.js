@@ -8,11 +8,9 @@
 import { TEMPLATES } from "../constant.js";
 import { handlePOLookup } from "./po.handler.js";
 import { handleSRLookup } from "./sr.handler.js";
-import { handleCreateTicket } from "./edost-create-service-ticket.handler.js";
-import { WhatsAppAPI } from "../../services/whatsapp-api.js";
+import { handleCreateTicket } from "../../services/edost-create-service-ticket.handler.js";
+import { whatsappApi as api } from "../../services/whatsapp-api.js";
 import logger from "../utils/logger.js";
-
-const api = new WhatsAppAPI();
 
 export async function handleButtonReply(from, buttonId) {
   if (buttonId?.name !== "flow") return;

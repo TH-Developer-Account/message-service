@@ -13,12 +13,9 @@
  * called exactly as before, just from here instead of the route handler.
  */
 import { Worker } from "bullmq";
+import { bullmqConnection } from "../config/redis.js";
 import { handleWebhook } from "../helper/webhook.js";
 import logger from "../helper/utils/logger.js";
-
-const connection = {
-  url: process.env.REDIS_URL,
-};
 
 // ─── Worker ───────────────────────────────────────────────────────────────
 export function startWebhookWorker() {
@@ -32,7 +29,7 @@ export function startWebhookWorker() {
       await handleWebhook(job.data);
     },
     {
-      connection,
+      connection: bullmqConnection,
 
       /**
        * How many webhook payloads to process simultaneously.
@@ -68,16 +65,6 @@ export function startWebhookWorker() {
   worker.on("error", (err) => {
     logger.error("Webhook worker error", { err: err.message });
   });
-
-  // Graceful shutdown — let in-flight jobs finish before the process exits
-  const shutdown = async (signal) => {
-    logger.info(`${signal} received — closing webhook worker`);
-    await worker.close();
-    process.exit(0);
-  };
-
-  process.on("SIGTERM", () => shutdown("SIGTERM"));
-  process.on("SIGINT", () => shutdown("SIGINT"));
 
   logger.info("Webhook worker started", { concurrency: 5 });
   return worker;

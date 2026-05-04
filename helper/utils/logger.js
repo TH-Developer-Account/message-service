@@ -33,7 +33,7 @@ import { fileURLToPath } from "url";
 import path from "path";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const LOG_DIR = path.resolve(__dirname, "../../../logs"); // project root /logs
+const LOG_DIR = path.resolve(__dirname, "../../logs");
 
 const IS_PROD = process.env.NODE_ENV === "production";
 const MIN_LEVEL = IS_PROD ? "info" : "debug";

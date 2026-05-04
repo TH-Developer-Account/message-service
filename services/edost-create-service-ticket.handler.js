@@ -16,14 +16,13 @@
  * No retry logic lives here — that is handled by machine-token-retry.js.
  */
 
-import axios from "axios";
-import logger from "../utils/logger.js";
+import { messageAxios } from "../helper/utils/http-client.js";
+import logger from "../helper/utils/logger.js";
 import FormData from "form-data";
-import { withMachineTokenRetry } from "../utils/edost-token-entry.js";
-import { WhatsAppAPI } from "../../services/whatsapp-api.js";
+import { withMachineTokenRetry } from "../helper/utils/edost-token-entry.js";
+import { WhatsAppAPI } from "./whatsapp-api.js";
 
-const BASE_URL =
-  "https://api.cegcpapa5m-tatahitac1-s1-public.model-t.cc.commerce.ondemand.com";
+const BASE_URL = process.env.EDOST_BASE_URL;
 
 const AUTH_URL = `${BASE_URL}/authorizationserver/oauth/token`;
 
@@ -56,11 +55,11 @@ export async function loginAndGetMachineToken() {
   const body = new URLSearchParams({
     grant_type: "client_credentials",
     scope: "",
-    client_id: "whatsapp_chatbot_thcm",
-    client_secret: "Secret",
+    client_id: process.env.EDOST_CLIENT_ID,
+    client_secret: process.env.EDOST_CLIENT_SECRET,
   });
 
-  const response = await axios.post(AUTH_URL, body, {
+  const response = await messageAxios.post(AUTH_URL, body, {
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
       Accept: "application/json, text/plain, */*",
@@ -92,7 +91,7 @@ async function fetchCustomerId(phoneNumber, token) {
   logger.debug("Fetching customerId for phone number", { phoneNumber });
 
   try {
-    const response = await axios.get(
+    const response = await messageAxios.get(
       `${BASE_URL}/occ/v2/tatahitachi-spa/users/${encodeURIComponent(phoneNumber)}`,
       {
         headers: commonHeaders(token),
@@ -138,7 +137,7 @@ export async function fetchMachineDetails(phoneNumber, token) {
   // Step 2 — fetch equipments using customerId
   logger.debug("Fetching equipments", { customerId });
 
-  const response = await axios.get(
+  const response = await messageAxios.get(
     `${BASE_URL}/occ/v2/tatahitachi-spa/users/${customerId}/dealers/equipments`,
     {
       headers: {
@@ -167,7 +166,7 @@ export async function fetchMachineDetails(phoneNumber, token) {
 async function createServiceTicket(customerId, form, token) {
   logger.debug("Submitting service ticket", { customerId });
 
-  const response = await axios.post(
+  const response = await messageAxios.post(
     `${BASE_URL}/occ/v2/tatahitachi-spa/users/${customerId}/support-ticket/`,
     form,
     {

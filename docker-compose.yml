@@ -1,44 +1,21 @@
-# services:
-#   app:
-#     build: .
-#     expose:
-#       - "3000"
-#     env_file:
-#       - .env
-#     depends_on:
-#       - redis
-#     restart: unless-stopped
-#     mem_limit: 400m
-
-#   redis:
-#     image: redis:latest
-#     command: redis-server --maxmemory 200mb --maxmemory-policy allkeys-lru --appendonly yes
-#     ports:
-#       - "6379"
-#     volumes:
-#       - redis_data:/data
-#     restart: unless-stopped
-#     mem_limit: 300m
-
-#   nginx:
-#     image: nginx:latest
-#     ports:
-#       - "80:80"
-#       - "443:443"
-#     volumes:
-#       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-#       - ./nginx/certs:/etc/nginx/certs:ro
-#     depends_on:
-#       - app
-
-# volumes:
-#   redis_data:
-
 services:
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80" # ALB forwards HTTP to port 80 after TLS termination
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+    restart: unless-stopped
+    mem_limit: 100m
+
   app:
     build: .
-    ports:
-      - "3000:3000"
+    volumes:
+      - ./logs:/app/logs
+    expose:
+      - "3000" # internal only — Nginx proxies to app:3000; port not exposed to host
     env_file:
       - .env
     extra_hosts:
@@ -46,13 +23,13 @@ services:
     depends_on:
       - redis
     restart: unless-stopped
-    mem_limit: 400m
+    mem_limit: 700m # 2 PM2 workers × 150M + PM2 overhead
 
   redis:
     image: redis:latest
-    command: redis-server --maxmemory 200mb --maxmemory-policy allkeys-lru --appendonly yes
-    ports:
-      - "6379:6379"
+    command: redis-server --maxmemory 200mb --maxmemory-policy noeviction --appendonly yes
+    expose:
+      - "6379" # internal only — only the app container needs Redis
     volumes:
       - redis_data:/data
     restart: unless-stopped

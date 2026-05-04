@@ -5,11 +5,9 @@
  * Each button payload maps to a WhatsApp Flow template via BUTTON_TEMPLATE_MAP.
  * Adding a new button only requires a new entry in the map.
  */
-import { WhatsAppAPI } from "../../services/whatsapp-api.js";
+import { whatsappApi as api } from "../../services/whatsapp-api.js";
 import { TEMPLATES } from "../constant.js";
 import logger from "../utils/logger.js";
-
-const api = new WhatsAppAPI();
 
 // Map button payload labels → template config objects
 const BUTTON_TEMPLATE_MAP = {

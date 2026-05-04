@@ -9,10 +9,8 @@ import { isDuplicateMessage } from "./dedup.js";
 import { handleText } from "./handlers/text.handler.js";
 import { handleButton } from "./handlers/button.handler.js";
 import { handleButtonReply } from "./handlers/flow-reply.handler.js";
-import { WhatsAppAPI } from "../services/whatsapp-api.js";
+import { whatsappApi as api } from "../services/whatsapp-api.js";
 import logger from "./utils/logger.js";
-
-const api = new WhatsAppAPI();
 
 // ─── Main dispatcher ──────────────────────────────────────────────────────
 export async function handleWebhook(body) {

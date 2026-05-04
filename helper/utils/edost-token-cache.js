@@ -13,7 +13,7 @@
  */
 
 import { redis } from "../../config/redis.js";
-import { loginAndGetMachineToken } from "../handlers/edost-create-service-ticket.handler.js";
+import { loginAndGetMachineToken } from "../../services/edost-create-service-ticket.handler.js";
 import logger from "./logger.js";
 
 const REDIS_KEY = "machine:access_token";

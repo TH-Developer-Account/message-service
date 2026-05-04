@@ -1,4 +1,4 @@
-import { fetchMachineDetails } from "./handlers/edost-create-service-ticket.handler.js";
+import { fetchMachineDetails } from "../services/edost-create-service-ticket.handler.js";
 import { withMachineTokenRetry } from "./utils/edost-token-entry.js";
 import logger from "./utils/logger.js";
 

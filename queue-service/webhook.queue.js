@@ -8,14 +8,11 @@
  * webhook.worker.js. Route handlers import this file to enqueue jobs.
  */
 import { Queue } from "bullmq";
+import { bullmqConnection } from "../config/redis.js";
 import logger from "../helper/utils/logger.js";
 
-const connection = {
-  url: process.env.REDIS_URL ?? "redis://localhost:6379",
-};
-
 export const webhookQueue = new Queue("webhooks", {
-  connection,
+  connection: bullmqConnection,
   defaultJobOptions: {
     attempts: 5,
     backoff: {
@@ -28,5 +25,5 @@ export const webhookQueue = new Queue("webhooks", {
 });
 
 webhookQueue.on("error", (err) => {
-  logger.error("Webhook queue error", { err: err.message });
+  logger.error("Webhook queue error", { err: err });
 });

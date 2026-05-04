@@ -5,10 +5,8 @@
  * formatted status back to the user via WhatsApp.
  */
 import { SAPService, normalizePONumber } from "../../services/sap-service.js";
-import { WhatsAppAPI } from "../../services/whatsapp-api.js";
+import { whatsappApi as api } from "../../services/whatsapp-api.js";
 import logger from "../utils/logger.js";
-
-const api = new WhatsAppAPI();
 const sap = new SAPService();
 
 export async function handlePOLookup(from, rawPO, isSalesOrder) {

@@ -1,25 +1,27 @@
 /**
  * sap-service.js — SAP Integration Layer for Purchase Order Status
  *
- * Supports three SAP connection methods — configure via SAP_CONNECTION_TYPE in .env:
+ * Configure via SAP_CONNECTION_TYPE in .env:
+ *  "odata" — SAP OData REST API (S/4HANA, Fiori, BTP)  [default]
  *
- *  1. "odata"  — SAP OData REST API (S/4HANA, Fiori, BTP)
- *  2. "rfc"    — SAP RFC/BAPI via node-rfc (requires SAP NWRFC SDK)
- *  3. "mock"   — Mock data for development/testing
- *
- * Key BAPIs / OData services used:
- *  - BAPI_PO_GETDETAIL1     → PO header + items
- *  - ME2M / ME2N            → PO list by material/vendor
- *  - OData: /sap/opu/odata/sap/MM_PUR_PO_MAINT_V2_SRV
+ * OData service: /sap/opu/odata/sap/ZSO_ODATA_SRV
  */
 
 import { messageAxios } from "../helper/utils/http-client.js";
 import logger from "../helper/utils/logger.js";
 
+const VALID_CONNECTION_TYPES = ["odata"];
+
 // ─── Main SAP Service class ───────────────────────────────────────────────
 export class SAPService {
   constructor() {
-    this.connectionType = process.env.SAP_CONNECTION_TYPE || "mock";
+    this.connectionType = process.env.SAP_CONNECTION_TYPE || "odata";
+
+    if (!VALID_CONNECTION_TYPES.includes(this.connectionType)) {
+      throw new Error(
+        `Invalid SAP_CONNECTION_TYPE "${this.connectionType}". Valid values: ${VALID_CONNECTION_TYPES.join(", ")}`,
+      );
+    }
   }
 
   /**
@@ -32,14 +34,7 @@ export class SAPService {
 
     logger.debug(`🔍 Fetching PO ${normalized} via [${this.connectionType}]`);
 
-    switch (this.connectionType) {
-      case "odata":
-        return this._fetchViaOData(normalized, isSalesOrder);
-      default:
-        logger.warn(
-          "The connecton type doesn't exist, Please try connection through ODATA ",
-        );
-    }
+    return this._fetchViaOData(normalized, isSalesOrder);
   }
 
   // ─── 1. OData (S/4HANA / Fiori / BTP) ──────────────────────────────────

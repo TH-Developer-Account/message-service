@@ -8,10 +8,8 @@
 import { fetchServiceDetails } from "../mobility.helper.js";
 import { formatServiceMessage } from "../constant.js";
 import { withTokenRetry } from "../utils/mobility-token-retry.js";
-import { WhatsAppAPI } from "../../services/whatsapp-api.js";
+import { whatsappApi as api } from "../../services/whatsapp-api.js";
 import logger from "../utils/logger.js";
-
-const api = new WhatsAppAPI();
 
 export async function handleSRLookup(from, srNo) {
   logger.info("SR lookup started", { srNo, from });
