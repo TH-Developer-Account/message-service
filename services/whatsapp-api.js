@@ -11,7 +11,8 @@ export class WhatsAppAPI {
   constructor() {
     this.phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
     this.accessToken = process.env.WHATSAPP_PERMANENT_ACCESS_TOKEN;
-    this.baseUrl = `https://graph.facebook.com/v19.0/${this.phoneNumberId}/messages`;
+    const version = process.env.GRAPH_API_VERSION ?? "v22.0";
+    this.baseUrl = `https://graph.facebook.com/${version}/${this.phoneNumberId}/messages`;
   }
 
   // ─── Core send ────────────────────────────────────────────────────────
@@ -45,8 +46,6 @@ export class WhatsAppAPI {
 
   // ─── Send Template message ──────────────────────────────────────────────────
   async sendTemplate({ to, templateName, flowToken }) {
-    console.log("temaplate name====================>", templateName);
-    console.log("flowToken====================>", flowToken);
     return this._send({
       recipient_type: "individual",
       to,
@@ -96,3 +95,5 @@ export class WhatsAppAPI {
     );
   }
 }
+
+export const whatsappApi = new WhatsAppAPI();

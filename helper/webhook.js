@@ -1,90 +1,21 @@
 /**
- * webhook.js — Incoming WhatsApp message handler
+ * helper/webhook.js — incoming message dispatcher
  *
- * Flow:
- *  1. User sends any message → bot checks if it's a PO number
- *  2. If yes → query SAP → send formatted status reply
- *  3. If no  → send help message with instructions
- *
- * Conversation states (stored in memory):
- *  - IDLE            → waiting for first message
- *  - AWAITING_PO     → user said "track" / "status", now waiting for PO number
+ * Sole responsibility: iterate the Meta webhook payload, deduplicate
+ * messages, resolve the contact name, and hand each message off to
+ * routeMessage. No business logic lives here.
  */
-
-import { WhatsAppAPI } from "../services/whatsapp-api.js";
-import axios from "axios";
-import { SAPService, normalizePONumber } from "../services/sap-service.js";
 import { isDuplicateMessage } from "./dedup.js";
-import { TEMPLATES } from "./constant.js";
+import { handleText } from "./handlers/text.handler.js";
+import { handleButton } from "./handlers/button.handler.js";
+import { handleButtonReply } from "./handlers/flow-reply.handler.js";
+import { whatsappApi as api } from "../services/whatsapp-api.js";
+import logger from "./utils/logger.js";
 
-const api = new WhatsAppAPI();
-const sap = new SAPService();
-
-const formatServiceMessage = (data) => {
-  const formatDate = (iso) =>
-    new Date(iso).toLocaleString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
-
-  return `🔧 *Service Update*
-
-*Mobility Id:* ${data.mobilityId}
-*Status:* ${data.status}
-*Trip Status:* ${data.tripStatus}
-
-*Service Order ID:* ${data.mobilityId}
-*Customer Call No:* ${data.customerCallNo}
-*Follow-up Call No:* ${data.followupCallNo}
-
-*Machine Details:*
-• Model: ${data.machineModel}
-• Serial No: ${data.machineSerialNo}
-
-*Engineer:* ${data.serviceEngineerName}
-
-*Timeline:*
-• Assigned: ${formatDate(data.engineerAssignedDate)}
-• Resolved: ${formatDate(data.resolutionDate)}
-
-✅ Your service request has been successfully completed.`;
-};
-
-async function loginAndGetToken() {
-  try {
-    const url =
-      "https://s4wpxl9869.execute-api.ap-south-1.amazonaws.com/Prod/api/User/Login";
-
-    const { data } = await axios.post(url, {
-      username: process.env.MOBILITY_USERNAME,
-      password: process.env.MOBILITY_PASSWORD,
-    });
-
-    // adjust based on actual response shape
-    return data?.idToken;
-  } catch (error) {
-    console.log("error==================>", error.response);
-  }
-}
-
-async function fetchServiceDetails(srNo, token) {
-  const url = `https://s4wpxl9869.execute-api.ap-south-1.amazonaws.com/Prod/api/Service/GetServiceDetailsByServiceOrderId/${encodeURIComponent(srNo)}`;
-
-  const { data } = await axios.get(url, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  return data;
-}
-
-// ─── Main webhook dispatcher ──────────────────────────────────────────────
+// ─── Main dispatcher ──────────────────────────────────────────────────────
 export async function handleWebhook(body) {
+  logger.debug("Webhook body received", { body });
+
   const entries = body?.entry ?? [];
 
   for (const entry of entries) {
@@ -93,213 +24,78 @@ export async function handleWebhook(body) {
 
       const value = change.value;
       const contacts = value.contacts ?? [];
-      const statuses = value.statuses ?? [];
 
-      // Log delivery statuses silently
-      for (const status of statuses) {
-        logStatus(status);
+      for (const status of value.statuses ?? []) {
+        logDeliveryStatus(status);
       }
 
       for (const message of value.messages ?? []) {
-        const messageId = message.id;
-        // ✅ Dedup
-        const isDuplicate = await isDuplicateMessage(messageId);
+        const isDuplicate = await isDuplicateMessage(message.id);
         if (isDuplicate) {
-          console.log("⚠️ Duplicate skipped:", messageId);
+          logger.warn("Duplicate message skipped", { messageId: message.id });
           continue;
         }
+
         const contact = contacts.find((c) => c.wa_id === message.from);
         const name = contact?.profile?.name || "there";
+
         try {
-          console.log("====================>", JSON.stringify(body, null, 2));
           await routeMessage(message, name);
         } catch (err) {
-          console.error(`Error handling message from ${message.from}:`, err);
+          logger.error("Error handling message", {
+            from: message.from,
+            type: message.type,
+            err: err.message,
+            stack: err.stack,
+          });
         }
       }
     }
   }
 }
 
-// ─── Message router ───────────────────────────────────────────────────────
+// ─── Router ───────────────────────────────────────────────────────────────
 async function routeMessage(message, name) {
   const from = message.from;
+  logger.debug("Routing message", { from, type: message.type });
 
-  if (message.type === "text") {
-    await handleText(from, name, message.text.body.trim());
-    return;
-  }
-
-  if (message.type === "button") {
-    const name = message.button.payload;
-    await handleButton(from, name);
-    return;
-  }
-
-  if (message.type === "interactive") {
-    const interactive = message.interactive;
-
-    // Button reply
-    if (interactive.type === "nfm_reply") {
-      await handleButtonReply(from, name, interactive.nfm_reply);
-      return;
-    }
-  }
-
-  // Unsupported type
-  await api.sendText(
-    from,
-    "Please send your Purchase Order number as a text message (e.g. *4500012345*).",
-  );
-}
-
-// ─── Text message handler ─────────────────────────────────────────────────
-async function handleText(from, name, text) {
-  const lower = text.toLowerCase();
-
-  // ── Greeting / start ──
-  if (/^(hi|hello|hey|start|help|menu|track|status|check)$/i.test(lower)) {
-    await api.sendWelcome(from);
-    return;
-  }
-
-  // ── Default fallback ──
-  await api.sendHelp(from, name);
-}
-
-// ─── Button message handler ─────────────────────────────────────────────────
-async function handleButton(from, name) {
-  switch (name) {
-    case "PO Order Status":
-      await api.sendTemplate({
-        to: from,
-        templateName: TEMPLATES.PO_STATUS.name,
-        flowToken: TEMPLATES.PO_STATUS.flowToken,
-      });
+  switch (message.type) {
+    case "text":
+      await handleText(from, name, message.text.body.trim());
       break;
 
-    case "Service Ticket Status":
-      await api.sendTemplate({
-        to: from,
-        templateName: TEMPLATES.SERVICE_TICKET.name,
-        flowToken: TEMPLATES.SERVICE_TICKET.flowToken,
-      });
+    case "button":
+      await handleButton(from, message.button.payload);
+      break;
+
+    case "interactive":
+      if (message.interactive.type === "nfm_reply") {
+        await handleButtonReply(from, message.interactive.nfm_reply);
+      }
       break;
 
     default:
-      // ── Default fallback ──
-      await api.sendHelp(from, name);
-      break;
-  }
-}
-
-// ─── PO lookup & response ─────────────────────────────────────────────────
-async function handlePOLookup(from, rawPO, isSalesOrder) {
-  const poNumber = normalizePONumber(rawPO);
-
-  console.log(`🔍 PO lookup: ${poNumber} for ${from}`);
-
-  let po;
-  try {
-    po = await sap.getPOStatus(poNumber, isSalesOrder);
-  } catch (err) {
-    console.log("error from SAP=====>", err);
-    if (err.code === "ENOTFOUND") {
+      logger.warn("Unsupported message type", { from, type: message.type });
       await api.sendText(
         from,
-        `❌ *PO Not Found*\n\n` +
-          `Purchase Order *${poNumber}* was not found in our system.`,
+        "Please send your Purchase Order number as a text message (e.g. *4500012345*).",
       );
-      return;
-    }
-    console.error("SAP query error:", JSON.stringify(err, null, 2));
-    await api.sendText(
-      from,
-      `⚠️ Our system is temporarily unavailable. Please try again in a moment or contact support.`,
-    );
-    return;
-  }
-
-  if (po) {
-    await api.sendText(from, po);
-  } else {
-    await api.sendText(
-      from,
-      `Not able to fetch the status, Please try again later!`,
-    );
   }
 }
 
-async function handleSRLookup(from, srNo) {
-  let mobilityToken = process.env.MOBILITY_ACCESS_TOKEN;
-  try {
-    // 1st attempt
-    let data = await fetchServiceDetails(srNo, mobilityToken);
-    const message = formatServiceMessage(data);
-    await api.sendText(from, message);
-  } catch (error) {
-    const status = error.response?.status;
-
-    // Only retry on auth failure
-    if (status === 401 || status === 403) {
-      try {
-        // refresh token
-        mobilityToken = await loginAndGetToken();
-
-        // retry request
-        const data = await fetchServiceDetails(srNo, mobilityToken);
-        const message = formatServiceMessage(data);
-        await api.sendText(from, message);
-      } catch (retryError) {
-        console.error(
-          "Retry failed:",
-          retryError.response?.data || retryError.message,
-        );
-        await api.sendText(
-          from,
-          "❌ Unable to fetch service details. Please try again later.",
-        );
-      }
-    } else {
-      console.error("Error:", error.response?.data || error.message);
-      await api.sendText(
-        from,
-        "❌ Something went wrong. Please try again later.",
-      );
-    }
-  }
-}
-
-// ─── Button reply handler ─────────────────────────────────────────────────
-async function handleButtonReply(from, name, buttonId) {
-  if (buttonId?.name === "flow") {
-    const details = JSON.parse(buttonId.response_json);
-    switch (details.flow_token) {
-      case TEMPLATES.PO_STATUS.flowToken:
-        const poNumber = details.po_number || details.sales_doc_number;
-        let isSalesOrder = false;
-        if (details.sales_doc_number) isSalesOrder = true;
-        await handlePOLookup(from, poNumber, isSalesOrder);
-        break;
-      case TEMPLATES.SERVICE_TICKET.flowToken:
-        const serviceTicketNumber = details.service_ticket_number;
-        await handleSRLookup(from, serviceTicketNumber);
-        break;
-
-      default:
-        break;
-    }
-
-    return;
-  }
-}
-
-// ─── Status log ───────────────────────────────────────────────────────────
-function logStatus(status) {
-  const { id, status: state, recipient_id, errors } = status;
+// ─── Delivery status logger ───────────────────────────────────────────────
+function logDeliveryStatus({ id, status: state, recipient_id, errors }) {
   if (state === "failed") {
-    console.error(`❌ Msg ${id} → ${recipient_id} FAILED:`, errors);
+    logger.error("Message delivery failed", {
+      messageId: id,
+      recipient_id,
+      errors,
+    });
   } else {
-    console.log(`📬 Msg ${id} → ${recipient_id}: ${state}`);
+    logger.info("Message delivery status", {
+      messageId: id,
+      recipient_id,
+      state,
+    });
   }
 }
