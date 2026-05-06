@@ -9,47 +9,56 @@ import { whatsappApi as api } from "../../services/whatsapp-api.js";
 import logger from "../utils/logger.js";
 const sap = new SAPService();
 
-export async function handlePOLookup(from, rawPO, isSalesOrder) {
-  const poNumber = normalizePONumber(rawPO);
-  logger.info("PO lookup started", { poNumber, from, isSalesOrder });
-
-  let po;
-  try {
-    po = await sap.getPOStatus(poNumber, isSalesOrder);
-  } catch (err) {
-    await sendSAPError(from, poNumber, err);
-    return;
-  }
-
-  if (po) {
-    logger.info("PO lookup succeeded", { poNumber });
-    await api.sendText(from, po);
-  } else {
-    logger.warn("PO lookup returned empty result", { poNumber });
+export async function handleCombinedPOLookup(from, { tata, dealer }) {
+  if (!tata && !dealer) {
     await api.sendText(
       from,
-      "Not able to fetch the status. Please try again later!",
-    );
-  }
-}
-
-// ─── Error handler ────────────────────────────────────────────────────────
-async function sendSAPError(from, poNumber, err) {
-  if (err.code === "ENOTFOUND" || err.code === "ECONNREFUSED") {
-    logger.error("SAP host unreachable", { code: err.code, poNumber });
-    await api.sendText(
-      from,
-      "⚠️ Could not reach SAP system. Please try again shortly.",
+      "Please provide at least one PO or Sales Order number.",
     );
     return;
   }
-  logger.error("SAP query failed", {
-    poNumber,
-    err: err.message,
-    stack: err.stack,
-  });
-  await api.sendText(
-    from,
-    "⚠️ Our system is temporarily unavailable. Please try again in a moment or contact support.",
-  );
+
+  // Run both lookups in parallel — neither blocks the other
+  const [tataResult, dealerResult] = await Promise.allSettled([
+    tata
+      ? sap._fetchViaOData(normalizePONumber(tata.poNumber), tata.isSalesOrder)
+      : Promise.resolve(null),
+    dealer
+      ? sap._fetchViaBYD(
+          normalizePONumber(dealer.poNumber),
+          dealer.isSalesOrder,
+        )
+      : Promise.resolve(null),
+  ]);
+
+  // ── Tata Hitachi result ──
+  if (tata) {
+    if (tataResult.status === "fulfilled" && tataResult.value) {
+      await api.sendText(
+        from,
+        `*Tata Hitachi Fulfillment:*\n${tataResult.value}`,
+      );
+    } else {
+      const err = tataResult.reason;
+      logger.error("Tata Hitachi PO lookup failed", { err });
+      await api.sendText(
+        from,
+        `*Tata Hitachi Fulfillment:*\nNot able to fetch status for ${tata.poNumber}. Please try again later.`,
+      );
+    }
+  }
+
+  // ── Dealer result ──
+  if (dealer) {
+    if (dealerResult.status === "fulfilled" && dealerResult.value) {
+      await api.sendText(from, `*Dealer Fulfillment:*\n${dealerResult.value}`);
+    } else {
+      const err = dealerResult.reason;
+      logger.error("Dealer PO lookup failed", { err });
+      await api.sendText(
+        from,
+        `*Dealer Fulfillment:*\nNot able to fetch status for ${dealer.poNumber}. Please try again later.`,
+      );
+    }
+  }
 }
