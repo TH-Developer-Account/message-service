@@ -60,6 +60,25 @@ export class SAPService {
 
     return formatSAPData(json);
   }
+
+  async _fetchViaBYD(poNumber, isSalesOrder) {
+    const url = `${process.env.BYD_BASE_URL}/your/byd/endpoint?$filter=${isSalesOrder ? "SalesDoc" : "CustRef"}%20eq%20%27${poNumber}%27`;
+
+    const response = await messageAxios.get(url, {
+      auth: {
+        username: process.env.BYD_USERNAME,
+        password: process.env.BYD_PASSWORD,
+      },
+      headers: { Accept: "application/json" },
+    });
+
+    const json = response.data.d.results;
+    if (!json) return null;
+
+    return `Fetched data via byd`;
+
+    // return formatBYDData(json);
+  }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────

@@ -6,7 +6,7 @@
  * to the appropriate lookup handler based on flow_token.
  */
 import { TEMPLATES } from "../constant.js";
-import { handlePOLookup } from "./po.handler.js";
+import { handleCombinedPOLookup } from "./po.handler.js";
 import { handleSRLookup } from "./sr.handler.js";
 import { handleCreateTicket } from "../../services/edost-create-service-ticket.handler.js";
 import { whatsappApi as api } from "../../services/whatsapp-api.js";
@@ -31,9 +31,19 @@ export async function handleButtonReply(from, buttonId) {
 
   switch (details.flow_token) {
     case TEMPLATES.PO_STATUS.flowToken: {
-      const poNumber = details.po_number || details.sales_doc_number;
+      const tataInput = details.po_number || details.sales_doc_number;
       const isSalesOrder = !!details.sales_doc_number;
-      await handlePOLookup(from, poNumber, isSalesOrder);
+
+      const dealerInput =
+        details.dealer_po_number || details.dealer_sales_doc_number;
+      const isDealerSalesOrder = !!details.dealer_sales_doc_number;
+
+      await handleCombinedPOLookup(from, {
+        tata: tataInput ? { poNumber: tataInput, isSalesOrder } : null,
+        dealer: dealerInput
+          ? { poNumber: dealerInput, isSalesOrder: isDealerSalesOrder }
+          : null,
+      });
       break;
     }
 
