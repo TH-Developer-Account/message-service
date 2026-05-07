@@ -14,6 +14,7 @@ const BUTTON_TEMPLATE_MAP = {
   "Order Status": TEMPLATES.PO_STATUS,
   "Service Ticket Status": TEMPLATES.SERVICE_TICKET,
   "Create Service Ticket": TEMPLATES.CREATE_TICKET,
+  "Register Operator": TEMPLATES.REGISTER_OPERATOR,
 };
 
 export async function handleButton(from, payload) {

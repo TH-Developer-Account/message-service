@@ -59,6 +59,12 @@ export async function handleButtonReply(from, buttonId) {
       break;
     }
 
+    case TEMPLATES.REGISTER_OPERATOR.flowToken: {
+      logger.info("Create-ticket flow submitted", { details });
+      // TODO: register operator here
+      break;
+    }
+
     default:
       logger.warn("Unknown flow_token received", {
         flowToken: details.flow_token,

@@ -821,6 +821,10 @@ export const TEMPLATES = {
     name: "create_service_ticket",
     flowToken: "create_service_ticket_flow_token",
   },
+  REGISTER_OPERATOR: {
+    name: "register_operator",
+    flowToken: "register_operator_flow_token",
+  },
 };
 
 export const formatDate = (iso) =>
