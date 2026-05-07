@@ -37,7 +37,7 @@ module.exports = {
       // ── Memory guard ────────────────────────────────────────────────────
       // Inside Docker: 2 workers × 150 MB = 300 MB, fitting inside the
       // container's 700 MB mem_limit with headroom for PM2 overhead.
-      max_memory_restart: "150M",
+      max_memory_restart: "600M",
 
       // ── Restart policy ──────────────────────────────────────────────────
       autorestart: true, // restart on crash (exit code != 0)

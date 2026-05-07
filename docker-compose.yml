@@ -23,7 +23,7 @@ services:
     depends_on:
       - redis
     restart: unless-stopped
-    mem_limit: 700m # 2 PM2 workers × 150M + PM2 overhead
+    mem_limit: 2g # 2 PM2 workers × 150M + PM2 overhead
 
   redis:
     image: redis:latest
