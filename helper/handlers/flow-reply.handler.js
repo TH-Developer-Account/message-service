@@ -9,6 +9,7 @@ import { TEMPLATES } from "../constant.js";
 import { handleCombinedPOLookup } from "./po.handler.js";
 import { handleSRLookup } from "./sr.handler.js";
 import { handleCreateTicket } from "../../services/edost-create-service-ticket.handler.js";
+import { handleRegisterOperator } from "./register-operator.handler.js";
 import { whatsappApi as api } from "../../services/whatsapp-api.js";
 import logger from "../utils/logger.js";
 
@@ -60,8 +61,8 @@ export async function handleButtonReply(from, buttonId) {
     }
 
     case TEMPLATES.REGISTER_OPERATOR.flowToken: {
-      logger.info("Create-ticket flow submitted", { details });
-      // TODO: register operator here
+      logger.info("Register-operator flow submitted", { from });
+      await handleRegisterOperator(from, details);
       break;
     }
 

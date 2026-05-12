@@ -39,7 +39,10 @@ export class SAPService {
 
   // ─── 1. OData (S/4HANA / Fiori / BTP) ──────────────────────────────────
   async _fetchViaOData(poNumber, isSalesOrder) {
-    const url = `http://th-s4-qas-ad.tatahitachi.co.in:8001/sap/opu/odata/sap/ZSO_ODATA_SRV/SOSet?$filter=${isSalesOrder ? "SalesDoc" : "CustRef"}%20eq%20%27${poNumber}%27`;
+    const url =
+      process.env.NODE_ENV === "development"
+        ? `http://th-s4-qas-ad.tatahitachi.co.in:8001/sap/opu/odata/sap/ZSO_ODATA_SRV/SOSet?$filter=${isSalesOrder ? "SalesDoc" : "CustRef"}%20eq%20%27${poNumber}%27`
+        : `http://th-s4-prd-a1.tatahitachi.co.in:8000/sap/opu/odata/sap/ZSO_ODATA_SRV/SOSet?$filter=${isSalesOrder ? "SalesDoc" : "CustRef"}%20eq%20%27${poNumber}%27`;
 
     const username = process.env.SAP_USERNAME;
     const password = process.env.SAP_PASSWORD;
