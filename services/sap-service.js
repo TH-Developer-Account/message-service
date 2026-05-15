@@ -65,22 +65,26 @@ export class SAPService {
   }
 
   async _fetchViaBYD(poNumber, isSalesOrder) {
-    const url = `${process.env.BYD_BASE_URL}/your/byd/endpoint?$filter=${isSalesOrder ? "SalesDoc" : "CustRef"}%20eq%20%27${poNumber}%27`;
+    const baseURL = process.env.BYD_BASE_URL;
 
-    const response = await messageAxios.get(url, {
+    const response = await messageAxios.get(baseURL, {
+      params: {
+        $select:
+          "C1GULUTW2TC5UU3ZM5CHWO5ZPKM,T1GULUTW2TC5UU3ZM5CHWO5ZPKM,CDOC_UUID,Cs1ANs8A8039F88126A08,Cs1ANsB3D7B663E8C86DE,CIBR_OD_UUID,CIPR_PROD_UUID,CIBR_SLO_UUID,CIBR_SLO_ITM_UUID,Cs1ANsBEDFB09D6BC236C",
+        $filter: `${isSalesOrder && `(CIBR_SLO_UUID eq '${poNumber}')`}`,
+        $format: "json",
+      },
       auth: {
         username: process.env.BYD_USERNAME,
         password: process.env.BYD_PASSWORD,
       },
-      headers: { Accept: "application/json" },
     });
 
     const json = response.data.d.results;
+
     if (!json) return null;
 
-    return `Fetched data via byd`;
-
-    // return formatBYDData(json);
+    return formatBYDData(json);
   }
 }
 
@@ -122,6 +126,36 @@ function formatSAPData(dataArray) {
         `  🔖 LR Number     : ${data.LRNO || "N/A"}`,
         `  🚚 Truck No      : ${check(data.TruckNo) ? "🛻 " + data.TruckNo : "⏳ Not Assigned"}`,
         `  🏢 Transporter   : ${check(data.TrName) ? data.TrName : "N/A"}`,
+        ``,
+        `━━━━━━━━━━━━━━━━━━━━`,
+      ];
+
+      return lines.join("\n");
+    })
+    .join("\n\n");
+
+  return messages;
+}
+
+function formatBYDData(dataArray) {
+  if (!dataArray?.length) return "N/A";
+
+  const check = (val) => val && val.trim() !== "";
+  const statusIcon = (val) => (check(val) ? "✅" : "⏳");
+
+  const messages = dataArray
+    .map((data) => {
+      const lines = [
+        `*Status Update for - ${data.CIBR_SLO_UUID}/${data.CIPR_PROD_UUID}*`,
+        `━━━━━━━━━━━━━━━━━━━━`,
+        ``,
+        `📋 *Document Status*`,
+        `  ${statusIcon(data.CIBR_SLO_UUID)}Sales Order ${statusIcon(data.CIBR_OD_UUID)}Delivery ${statusIcon(data.BillingDoc)}Billing`,
+        ``,
+        `🚦 *Dispatch Status*`,
+        `  🔖 LR Number     : ${data.Cs1ANsB3D7B663E8C86DE || "N/A"}`,
+        // `  🚚 Truck No      : ${check(data.TruckNo) ? "🛻 " + data.TruckNo : "⏳ Not Assigned"}`,
+        `  🏢 Transporter   : ${check(data.Cs1ANsBEDFB09D6BC236C) ? data.Cs1ANsBEDFB09D6BC236C : "N/A"}`,
         ``,
         `━━━━━━━━━━━━━━━━━━━━`,
       ];
