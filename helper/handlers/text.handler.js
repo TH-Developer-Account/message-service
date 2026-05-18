@@ -8,15 +8,19 @@
 import { whatsappApi as api } from "../../services/whatsapp-api.js";
 import logger from "../utils/logger.js";
 
-const GREETING_REGEX = /^(hi|hello|hey|start|help|menu|track|status|check)$/i;
+// const GREETING_REGEX = /^(hi|hello|hey|start|help|menu|track|status|check)$/i;
 
 export async function handleText(from, name, text) {
-  if (GREETING_REGEX.test(text)) {
-    logger.info("Greeting received — sending welcome", { from });
-    await api.sendWelcome(from);
-    return;
-  }
+  // if (GREETING_REGEX.test(text)) {
+  //   logger.info("Greeting received — sending welcome", { from });
+  //   await api.sendWelcome(from);
+  //   return;
+  // }
+
+  // logger.info("Unrecognised text — sending help", { from, text });
+  // await api.sendHelp(from, name);
 
   logger.info("Unrecognised text — sending help", { from, text });
-  await api.sendHelp(from, name);
+  await api.sendWelcome(from);
+  return;
 }
