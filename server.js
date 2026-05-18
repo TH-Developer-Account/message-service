@@ -128,7 +128,6 @@ app.get("/health/deep", async (_req, res) => {
 // Catches any error passed via next(err) inside route handlers.
 // eslint-disable-next-line unused-imports/no-unused-vars
 app.use((err, req, res, next) => {
-  // eslint-disable-line no-unused-vars
   logger.error("Unhandled Express error", {
     err: err.message,
     stack: err.stack,
