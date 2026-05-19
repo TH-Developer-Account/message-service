@@ -70,7 +70,7 @@ export class SAPService {
     const response = await messageAxios.get(baseURL, {
       params: {
         $select:
-          "C1GULUTW2TC5UU3ZM5CHWO5ZPKM,T1GULUTW2TC5UU3ZM5CHWO5ZPKM,CDOC_UUID,Cs1ANs8A8039F88126A08,Cs1ANsB3D7B663E8C86DE,CIBR_OD_UUID,CIPR_PROD_UUID,CIBR_SLO_UUID,CIBR_SLO_ITM_UUID,Cs1ANsBEDFB09D6BC236C",
+          "C1GULUTW2TC5UU3ZM5CHWO5ZPKM,T1GULUTW2TC5UU3ZM5CHWO5ZPKM,CDOC_UUID,Cs1ANs8A8039F88126A08,Cs1ANsB3D7B663E8C86DE,CIBR_OD_UUID,CIPR_PROD_UUID,CIBR_SLO_UUID,CIBR_SLO_ITM_UUID,Cs1ANsBEDFB09D6BC236C,TDOC_PROC_TYPE,CDOC_PROC_TYPE",
         $filter: `${isSalesOrder && `(CIBR_SLO_UUID eq '${poNumber}')`}`,
         $format: "json",
       },
@@ -150,7 +150,7 @@ function formatBYDData(dataArray) {
         `━━━━━━━━━━━━━━━━━━━━`,
         ``,
         `📋 *Document Status*`,
-        `  ${statusIcon(data.CIBR_SLO_UUID)}Sales Order ${statusIcon(data.CIBR_OD_UUID)}Delivery ${statusIcon(data.BillingDoc)}Billing`,
+        `  ${statusIcon(data.CIBR_SLO_UUID)}Sales Order ${statusIcon(data.CIBR_OD_UUID)}Delivery ${data.TDOC_PROC_TYPE === "Invoice" ? `${statusIcon(data.TDOC_PROC_TYPE === "Invoice")}Invoice` : `${statusIcon(data.TDOC_PROC_TYPE === "Credit Memo")}Credit`}`,
         ``,
         `🚦 *Dispatch Status*`,
         `  🔖 LR Number     : ${data.Cs1ANsB3D7B663E8C86DE || "N/A"}`,
