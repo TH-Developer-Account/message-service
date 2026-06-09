@@ -140,17 +140,23 @@ function formatSAPData(dataArray) {
 function formatBYDData(dataArray) {
   if (!dataArray?.length) return "N/A";
 
-  const check = (val) => val && val.trim() !== "";
+  const check = (val) => String(val || "").trim() !== "";
   const statusIcon = (val) => (check(val) ? "✅" : "⏳");
 
   const messages = dataArray
     .map((data) => {
+      const documentType =
+        data.TDOC_PROC_TYPE === "Invoice"
+          ? "Invoice"
+          : data.TDOC_PROC_TYPE === "Credit Memo"
+            ? "Credit"
+            : "N/A";
       const lines = [
         `*Status Update for - ${data.CIBR_SLO_UUID}/${data.CIPR_PROD_UUID}*`,
         `━━━━━━━━━━━━━━━━━━━━`,
         ``,
         `📋 *Document Status*`,
-        `  ${statusIcon(data.CIBR_SLO_UUID)}Sales Order ${statusIcon(data.CIBR_OD_UUID)}Delivery ${data.TDOC_PROC_TYPE === "Invoice" ? `${statusIcon(data.TDOC_PROC_TYPE === "Invoice")}Invoice` : `${statusIcon(data.TDOC_PROC_TYPE === "Credit Memo")}Credit`}`,
+        `  ${statusIcon(data.CIBR_SLO_UUID)} Sales Order ${statusIcon(data.CIBR_OD_UUID)} Delivery ${statusIcon(documentType)} ${documentType}`,
         ``,
         `🚦 *Dispatch Status*`,
         `  🔖 LR Number     : ${data.Cs1ANsB3D7B663E8C86DE || "N/A"}`,
