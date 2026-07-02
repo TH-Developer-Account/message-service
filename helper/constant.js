@@ -818,12 +818,16 @@ export const TEMPLATES = {
     flowToken: "service_ticket_utility_template_flow_token",
   },
   CREATE_TICKET: {
-    name: "create_service_ticket",
-    flowToken: "create_service_ticket_flow_token",
+    name: "create_service_ticket_test",
+    flowToken: "create_service_ticket_test_flow_token",
   },
   REGISTER_OPERATOR: {
     name: "register_operator",
     flowToken: "register_operator_flow_token",
+  },
+  SPARES_STATUS: {
+    name: "spares_status_template",
+    flowToken: "spares_status_template_flow_token",
   },
 };
 

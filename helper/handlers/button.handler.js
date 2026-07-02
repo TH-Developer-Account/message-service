@@ -15,6 +15,7 @@ const BUTTON_TEMPLATE_MAP = {
   "Service Ticket Status": TEMPLATES.SERVICE_TICKET,
   "Create Service Ticket": TEMPLATES.CREATE_TICKET,
   "Register to Tata Hitachi": TEMPLATES.REGISTER_OPERATOR,
+  "Spare parts Status": TEMPLATES.SPARES_STATUS,
 };
 
 export async function handleButton(from, payload) {

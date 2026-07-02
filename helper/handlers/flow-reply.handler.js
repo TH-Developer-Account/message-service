@@ -6,7 +6,10 @@
  * to the appropriate lookup handler based on flow_token.
  */
 import { TEMPLATES } from "../constant.js";
-import { handleCombinedPOLookup } from "./po.handler.js";
+import {
+  handleCombinedPOLookup,
+  handleSparesStatusLookup,
+} from "./po.handler.js";
 import { handleSRLookup } from "./sr.handler.js";
 import { handleCreateTicket } from "../../services/edost-create-service-ticket.handler.js";
 import { handleRegisterOperator } from "./register-operator.handler.js";
@@ -63,6 +66,12 @@ export async function handleButtonReply(from, buttonId) {
     case TEMPLATES.REGISTER_OPERATOR.flowToken: {
       logger.info("Register-operator flow submitted", { from });
       await handleRegisterOperator(from, details);
+      break;
+    }
+
+    case TEMPLATES.SPARES_STATUS.flowToken: {
+      logger.info("Spares-status flow submitted", { from });
+      await handleSparesStatusLookup(from, details.spares_ref_number);
       break;
     }
 

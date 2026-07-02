@@ -64,6 +64,32 @@ export class SAPService {
     return formatSAPData(json);
   }
 
+  async _fetchSparesStatusViaOData(poNumber) {
+    const url =
+      process.env.NODE_ENV === "development"
+        ? `http://th-s4-qas-ad.tatahitachi.co.in:8001/sap/opu/odata/sap/ZSO_ODATA_V2_SRV/SOSet?$filter=SalesDoc%20eq%20%27${poNumber}%27`
+        : `http://th-s4-prd-a1.tatahitachi.co.in:8000/sap/opu/odata/sap/ZSO_ODATA_V2_SRV/SOSet?$filter=SalesDoc%20eq%20%27${poNumber}%27`;
+
+    const username = process.env.SAP_USERNAME;
+    const password = process.env.SAP_PASSWORD;
+
+    const response = await messageAxios.get(url, {
+      auth: {
+        username,
+        password,
+      },
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    const json = response.data.d.results;
+
+    if (!json) return null;
+
+    return formatSalesOrderDeliveryStatus(json);
+  }
+
   async _fetchViaBYD(poNumber, isSalesOrder) {
     const baseURL = process.env.BYD_BASE_URL;
 
@@ -171,4 +197,27 @@ function formatBYDData(dataArray) {
     .join("\n\n");
 
   return messages;
+}
+
+function formatSalesOrderDeliveryStatus(salesOrders) {
+  if (!salesOrders?.length) return "N/A";
+
+  return salesOrders
+    .map(
+      ({
+        SalesDoc,
+        TotalCountOfItems,
+        FullyDeliveredCount,
+        PartiallyDeliveredCount,
+        NotExecutedCount,
+      }) =>
+        [
+          `Sales Order: ${SalesDoc}`,
+          `Total Items: ${TotalCountOfItems}`,
+          `✅ Fully Delivered: ${FullyDeliveredCount}`,
+          `🔸 Partially Delivered: ${PartiallyDeliveredCount}`,
+          `◻️ Not Executed: ${NotExecutedCount}`,
+        ].join("\n"),
+    )
+    .join("\n\n");
 }
