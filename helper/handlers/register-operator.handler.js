@@ -15,6 +15,7 @@ export async function handleRegisterOperator(from, details) {
       name: details.operator_name,
       phone: details.operator_number,
       machine: details.machine_serial_number,
+      type: details.operator_type,
       submittedBy: from,
     });
 

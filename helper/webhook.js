@@ -23,6 +23,18 @@ export async function handleWebhook(body) {
       if (change.field !== "messages") continue;
 
       const value = change.value;
+
+      // This WABA has multiple phone numbers, each fronted by its own
+      // deployment/callback URL. Meta delivers every inbound message to
+      // ALL subscribed Apps regardless of which number it was sent to, so
+      // each deployment must ignore payloads addressed to a number it
+      // doesn't own — otherwise every deployment replies to every message.
+      if (
+        value.metadata?.phone_number_id !== process.env.WHATSAPP_PHONE_NUMBER_ID
+      ) {
+        continue;
+      }
+
       const contacts = value.contacts ?? [];
 
       for (const status of value.statuses ?? []) {
