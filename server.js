@@ -18,6 +18,7 @@ import { httpLogger } from "./middleware/http-logger.js";
 import { startWebhookWorker } from "./queue-service/webhook.worker.js";
 import { webhookRouter } from "./routes/webhook.route.js";
 import { flowRouter } from "./routes/flow.route.js";
+import { sapCsrfRouter } from "./routes/sap-csrf.route.js";
 import { redis } from "./config/redis.js";
 
 // ─── Startup env validation ───────────────────────────────────────────────
@@ -96,6 +97,7 @@ const flowLimiter = rateLimit({
 // ─── Routes ───────────────────────────────────────────────────────────────
 app.use("/webhook", webhookLimiter, webhookRouter);
 app.use("/fetch-machine-serials", flowLimiter, flowRouter);
+app.use("/sap-csrf-token", sapCsrfRouter);
 
 // ─── Health ───────────────────────────────────────────────────────────────
 app.get("/health", (_req, res) => {
