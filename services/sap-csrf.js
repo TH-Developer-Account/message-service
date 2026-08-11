@@ -4,7 +4,20 @@ import axios from "axios";
  * Fetches a fresh CSRF token from a SAP OData endpoint.
  * SAP issues these tokens per-session via the standard
  * "x-csrf-token: fetch" handshake on a GET request.
+ *
+ *
  */
+
+const extractCookieHeader = (setCookieArray) => {
+  if (!setCookieArray || setCookieArray.length === 0) {
+    return "";
+  }
+
+  return setCookieArray
+    .map((cookieString) => cookieString.split(";")[0].trim())
+    .join("; ");
+};
+
 export const fetchSapCsrfToken = async (sapUrl) => {
   const response = await axios.get(sapUrl, {
     headers: {
@@ -25,6 +38,7 @@ export const fetchSapCsrfToken = async (sapUrl) => {
   }
 
   const token = response.headers["x-csrf-token"];
+  const cookie = extractCookieHeader(response.headers["set-cookie"]);
 
   if (!token) {
     // SAP responded, but didn't issue a token — worth distinguishing
@@ -32,5 +46,5 @@ export const fetchSapCsrfToken = async (sapUrl) => {
     throw new Error("SAP response did not include an x-csrf-token header");
   }
 
-  return { csrfToken: token, sapBody: response.data };
+  return { csrfToken: token, cookie, sapBody: response.data };
 };

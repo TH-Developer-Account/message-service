@@ -97,7 +97,7 @@ const flowLimiter = rateLimit({
 // ─── Routes ───────────────────────────────────────────────────────────────
 app.use("/webhook", webhookLimiter, webhookRouter);
 app.use("/fetch-machine-serials", flowLimiter, flowRouter);
-app.use("/sap-csrf-token", sapCsrfRouter);
+app.use("/byd/get-token", sapCsrfRouter);
 
 // ─── Health ───────────────────────────────────────────────────────────────
 app.get("/health", (_req, res) => {
