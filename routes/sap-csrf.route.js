@@ -7,7 +7,7 @@ export const sapCsrfRouter = Router();
 
 sapCsrfRouter.get("/", internalAuth, async (req, res) => {
   const sapUrl =
-    "https://my346415.sapbydesign.com/sap/byd/odata/cust/v1/arcustomertally/ARCustomerTallyRootCollection";
+    "https://my346415.sapbydesign.com/sap/byd/odata/cust/v1/customeraroutstanding/CustomerAROutstandingRootCollection";
 
   try {
     const response = await fetchSapCsrfToken(sapUrl);
