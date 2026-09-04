@@ -9,6 +9,7 @@ import { TEMPLATES } from "../constant.js";
 import {
   handleCombinedPOLookup,
   handleSparesStatusLookup,
+  handleMachineTrackingLookup,
 } from "./po.handler.js";
 import { handleSRLookup } from "./sr.handler.js";
 import { handleCreateTicket } from "../../services/edost-create-service-ticket.handler.js";
@@ -72,6 +73,12 @@ export async function handleButtonReply(from, buttonId) {
     case TEMPLATES.SPARES_STATUS.flowToken: {
       logger.info("Spares-status flow submitted", { from });
       await handleSparesStatusLookup(from, details.spares_ref_number);
+      break;
+    }
+
+    case TEMPLATES.TRACK_MACHINE.flowToken: {
+      logger.info("Machine tracking flow submitted", { from });
+      await handleMachineTrackingLookup(from, details.machine_serial_number);
       break;
     }
 

@@ -94,6 +94,25 @@ export class WhatsAppAPI {
         `• 4500012345.`,
     );
   }
+
+  // ─── Location message ───────────────────────────────────────────────
+  async sendLocation(to, { latitude, longitude, name, address } = {}) {
+    return this._send({
+      recipient_type: "individual",
+      to,
+      type: "location",
+      location: { latitude, longitude, name, address },
+    });
+  }
+
+  // ─── Location + details ──────────────────────────────────────────────
+  async sendLocationWithDetails(
+    to,
+    { latitude, longitude, name, address, detailsText },
+  ) {
+    await this.sendLocation(to, { latitude, longitude, name, address });
+    return this.sendText(to, detailsText);
+  }
 }
 
 export const whatsappApi = new WhatsAppAPI();

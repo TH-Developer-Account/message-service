@@ -829,6 +829,10 @@ export const TEMPLATES = {
     name: "spares_status_template",
     flowToken: "spares_status_template_flow_token",
   },
+  TRACK_MACHINE: {
+    name: "machine_tracking_template",
+    flowToken: "machine_tracking_template_flow_token",
+  },
 };
 
 export const formatDate = (iso) =>

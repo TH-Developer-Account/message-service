@@ -112,6 +112,29 @@ export class SAPService {
 
     return formatBYDData(json);
   }
+
+  async _fetchMachineTrackingViaC4C(machineSerialNumber) {
+    const baseURL = process.env.C4C_BASE_URL;
+
+    const response = await messageAxios.get(baseURL, {
+      params: {
+        $select:
+          "Cs1ANsB66F6B379DFF6AE,CACCOUNT_UUID,TACCOUNT_UUID,Cs1ANs6B8788AE5252FD8,Cs1ANs6E1FCA19B68687C,TREFERENCED_PRODUCT_UUID,CUUID",
+        $filter: `${machineSerialNumber && `(CUUID eq '${machineSerialNumber}')`}`,
+        $format: "json",
+      },
+      auth: {
+        username: process.env.C4C_USERNAME,
+        password: process.env.C4C_PASSWORD,
+      },
+    });
+
+    const results = response.data.d.results;
+
+    if (!results || results.length === 0) return null;
+
+    return mapMachineTrackingRecord(results[0]);
+  }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -220,4 +243,16 @@ function formatSalesOrderDeliveryStatus(salesOrders) {
         ].join("\n"),
     )
     .join("\n\n");
+}
+
+function mapMachineTrackingRecord(record) {
+  return {
+    machineSerialNumber: record.CUUID,
+    latitude: Number(record.Cs1ANs6B8788AE5252FD8),
+    longitude: Number(record.Cs1ANs6E1FCA19B68687C),
+    address: record.Cs1ANsB66F6B379DFF6AE,
+    customerCode: record.CACCOUNT_UUID,
+    customerName: record.TACCOUNT_UUID,
+    productModel: record.TREFERENCED_PRODUCT_UUID,
+  };
 }
