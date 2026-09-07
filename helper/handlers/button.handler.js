@@ -11,10 +11,12 @@ import logger from "../utils/logger.js";
 
 // Map button payload labels → template config objects
 const BUTTON_TEMPLATE_MAP = {
-  "Order Status": TEMPLATES.PO_STATUS,
+  "Machine Order Status": TEMPLATES.PO_STATUS,
   "Service Ticket Status": TEMPLATES.SERVICE_TICKET,
   "Create Service Ticket": TEMPLATES.CREATE_TICKET,
   "Register to Tata Hitachi": TEMPLATES.REGISTER_OPERATOR,
+  "Spare parts Status": TEMPLATES.SPARES_STATUS,
+  "Track Machine": TEMPLATES.TRACK_MACHINE,
 };
 
 export async function handleButton(from, payload) {

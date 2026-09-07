@@ -62,3 +62,55 @@ export async function handleCombinedPOLookup(from, { tata, dealer }) {
     }
   }
 }
+
+export async function handleSparesStatusLookup(from, sparesStatusNumber) {
+  if (!sparesStatusNumber) {
+    await api.sendText(from, "Please provide a Spares Status number.");
+    return;
+  }
+  try {
+    const message = await sap._fetchSparesStatusViaOData(
+      normalizePONumber(sparesStatusNumber),
+    );
+    await api.sendText(from, `*Spares Status:*\n${message}`);
+  } catch (err) {
+    logger.error("Spares Status lookup failed", { err });
+    await api.sendText(
+      from,
+      `*Spares Status:*\nNot able to fetch status for ${sparesStatusNumber}. Please try again later.`,
+    );
+  }
+}
+
+export async function handleMachineTrackingLookup(from, machineSerialNumber) {
+  if (!machineSerialNumber) {
+    await api.sendText(
+      from,
+      "Please provide a Registered Machine Serial Number.",
+    );
+    return;
+  }
+  try {
+    const machine = await sap._fetchMachineTrackingViaC4C(machineSerialNumber);
+
+    const detailsText =
+      `📍 *Coordinates:* ${machine.latitude}, ${machine.longitude}\n` +
+      `🔧 *Machine Serial No:* ${machine.machineSerialNumber}\n` +
+      `🏭 *Product:* ${machine.productModel}\n` +
+      `🏢 *Customer Name:* ${machine.customerName}\n` +
+      `🏢 *Customer Code:* ${machine.customerCode}`;
+
+    await api.sendLocationWithDetails(from, {
+      latitude: machine.latitude,
+      longitude: machine.longitude,
+      address: machine.address,
+      detailsText,
+    });
+  } catch (err) {
+    logger.error("Spares Status lookup failed", { err });
+    await api.sendText(
+      from,
+      `*Spares Status:*\nNot able to fetch status for ${machineSerialNumber}. Please try again later.`,
+    );
+  }
+}

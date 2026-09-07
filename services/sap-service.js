@@ -64,6 +64,32 @@ export class SAPService {
     return formatSAPData(json);
   }
 
+  async _fetchSparesStatusViaOData(poNumber) {
+    const url =
+      process.env.NODE_ENV === "development"
+        ? `http://th-s4-qas-ad.tatahitachi.co.in:8001/sap/opu/odata/sap/ZSO_ODATA_V2_SRV/SOSet?$filter=SalesDoc%20eq%20%27${poNumber}%27`
+        : `http://th-s4-prd-a1.tatahitachi.co.in:8000/sap/opu/odata/sap/ZSO_ODATA_V2_SRV/SOSet?$filter=SalesDoc%20eq%20%27${poNumber}%27`;
+
+    const username = process.env.SAP_USERNAME;
+    const password = process.env.SAP_PASSWORD;
+
+    const response = await messageAxios.get(url, {
+      auth: {
+        username,
+        password,
+      },
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    const json = response.data.d.results;
+
+    if (!json) return null;
+
+    return formatSalesOrderDeliveryStatus(json);
+  }
+
   async _fetchViaBYD(poNumber, isSalesOrder) {
     const baseURL = process.env.BYD_BASE_URL;
 
@@ -85,6 +111,29 @@ export class SAPService {
     if (!json) return null;
 
     return formatBYDData(json);
+  }
+
+  async _fetchMachineTrackingViaC4C(machineSerialNumber) {
+    const baseURL = process.env.C4C_BASE_URL;
+
+    const response = await messageAxios.get(baseURL, {
+      params: {
+        $select:
+          "Cs1ANsB66F6B379DFF6AE,CACCOUNT_UUID,TACCOUNT_UUID,Cs1ANs6B8788AE5252FD8,Cs1ANs6E1FCA19B68687C,TREFERENCED_PRODUCT_UUID,CUUID",
+        $filter: `${machineSerialNumber && `(CUUID eq '${machineSerialNumber}')`}`,
+        $format: "json",
+      },
+      auth: {
+        username: process.env.C4C_USERNAME,
+        password: process.env.C4C_PASSWORD,
+      },
+    });
+
+    const results = response.data.d.results;
+
+    if (!results || results.length === 0) return null;
+
+    return mapMachineTrackingRecord(results[0]);
   }
 }
 
@@ -171,4 +220,39 @@ function formatBYDData(dataArray) {
     .join("\n\n");
 
   return messages;
+}
+
+function formatSalesOrderDeliveryStatus(salesOrders) {
+  if (!salesOrders?.length) return "N/A";
+
+  return salesOrders
+    .map(
+      ({
+        SalesDoc,
+        TotalCountOfItems,
+        FullyDeliveredCount,
+        PartiallyDeliveredCount,
+        NotExecutedCount,
+      }) =>
+        [
+          `Sales Order: ${SalesDoc}`,
+          `Total Items: ${TotalCountOfItems}`,
+          `✅ Fully Delivered: ${FullyDeliveredCount}`,
+          `🔸 Partially Delivered: ${PartiallyDeliveredCount}`,
+          `◻️ Not Executed: ${NotExecutedCount}`,
+        ].join("\n"),
+    )
+    .join("\n\n");
+}
+
+function mapMachineTrackingRecord(record) {
+  return {
+    machineSerialNumber: record.CUUID,
+    latitude: Number(record.Cs1ANs6B8788AE5252FD8),
+    longitude: Number(record.Cs1ANs6E1FCA19B68687C),
+    address: record.Cs1ANsB66F6B379DFF6AE,
+    customerCode: record.CACCOUNT_UUID,
+    customerName: record.TACCOUNT_UUID,
+    productModel: record.TREFERENCED_PRODUCT_UUID,
+  };
 }

@@ -21,6 +21,7 @@ import logger from "../helper/utils/logger.js";
 import FormData from "form-data";
 import { withMachineTokenRetry } from "../helper/utils/edost-token-entry.js";
 import { WhatsAppAPI } from "./whatsapp-api.js";
+import { saveTicketContact } from "../helper/utils/ticket-contact-store.js";
 
 const BASE_URL = process.env.EDOST_BASE_URL;
 
@@ -230,11 +231,7 @@ export async function handleCreateTicket(from, details) {
     });
 
     logger.info("Service ticket created", { from, ticketId });
-
-    await api.sendText(
-      from,
-      `✅ Your service request has been submitted successfully!\n\n*Ticket ID:* ${ticketId}`,
-    );
+    await saveTicketContact(ticketId, from);
   } catch (err) {
     logger.error("Create-ticket failed", {
       from,
