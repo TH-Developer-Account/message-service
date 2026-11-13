@@ -28,7 +28,12 @@ export class WhatsAppAPI {
 
     if (!res.ok) {
       const err = await res.json();
-      throw new Error(`WhatsApp API error: ${JSON.stringify(err)}`);
+      // Keep the HTTP status on the error so callers (e.g. retry logic) don't
+      // have to re-parse the message string to detect rate limiting (429).
+      const error = new Error(`WhatsApp API error: ${JSON.stringify(err)}`);
+      error.status = res.status;
+      error.apiError = err?.error;
+      throw error;
     }
 
     return res.json();
@@ -72,16 +77,23 @@ export class WhatsAppAPI {
     });
   }
 
-  async sendWelcome(to) {
+  // ─── Static (variable-free) template ───────────────────────────────────
+  // For templates with no body/button parameters — e.g. a plain broadcast
+  // notification. `sendWelcome` below is just this with a fixed template name.
+  async sendStaticTemplate(to, templateName, languageCode = "en") {
     return this._send({
       recipient_type: "individual",
       to,
       type: "template",
       template: {
-        name: "select_option_template",
-        language: { code: "en" },
+        name: templateName,
+        language: { code: languageCode },
       },
     });
+  }
+
+  async sendWelcome(to) {
+    return this.sendStaticTemplate(to, "select_option_template");
   }
 
   // ─── Help / fallback message ───────────────────────────────────────────
